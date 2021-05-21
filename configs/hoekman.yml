@@ -1,17 +1,12 @@
 model:
-    arch: runet
-    input_nbr: 6
-    # channel_scale: 0.125
-    # pretrained: False
+    arch: unetpp
+    input_nbr: 9
 data:
     dataloader: PolSAR
     split: data/GF3/split/denoise/Hoekman/0.9
-    # img_rows: 512
-    # img_cols: 512
     format: hoekman
     path: data/GF3
     mirror: True 
-    # use_perc: 1
     norm: False
 train:
     augment: 

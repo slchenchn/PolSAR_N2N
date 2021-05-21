@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-04-25
+Last Modified: 2021-05-21
 	content: 
 '''
 import shutil
@@ -10,6 +10,7 @@ import os.path as osp
 import sys
 from typing import Union
 import re
+from random import shuffle
 
 import torch
 import torch.nn as nn
@@ -69,7 +70,7 @@ class PolSAR(data.Dataset):
         return len(self.files_path)
 
     def get_file_data(self, index):
-        ''' Read file data, in torch.tensor format '''
+        ''' Read file data '''
 
         # get the file data
         folder_path = self.files_path[index]
@@ -135,7 +136,7 @@ class PolSAR(data.Dataset):
                 file_path = osp.join(folder_path, 'normed.npy')
             else:
                 file_path = osp.join(folder_path, 'unnormed.npy')
-            file = torch.from_numpy(np.load(file_path))
+            file = np.load(file_path)
 
         else:
             raise NotImplementedError
@@ -163,27 +164,38 @@ class PolSAR(data.Dataset):
     def rand_pool(self, img, mask=None):
         ''' Random pooling 
         Args:
-            img (ndarray): image file, whose shape should be divisible by 2
-            
+            img (ndarray): image file, in shape of [height, weight, channel],
+                whose shape should be divisible by 2
+            mask (list): subsample mask, if None, this func generates one. 
+                Default: None
         Returns:
-
+            sub_img (list): two subsampled images
+            mask (list): subsample mask
         '''
-        height, weight, channel = img.shape
-        pool_enc = np.random.randint(0, 6, size=(height//2, weight//2))
-        pool_dec_1 = (pool_enc-1) // 2
-        pool_dec_1[pool_dec_1<0] = 0        # because -1//2 = 1
-        pool_dec_2 = (pool_enc)%3 + pool_dec_1 + 1
+
+        # generate mask if None
+        if mask is None:
+            height, weight, channel = img.shape
+            pool_enc = np.random.randint(0, 6, size=(height//2, weight//2))
+            pool_dec_1 = (pool_enc-1) // 2
+            pool_dec_1[pool_dec_1<0] = 0        # because -1//2 = 1
+            pool_dec_2 = (pool_enc)%3 + pool_dec_1 + 1
+            mask = [pool_dec_1, pool_dec_2]
+            shuffle(mask)
+
+        # apply subsample mask
         img = img.reshape(height//2, 2, weight//2, 2, -1)
         img = img.transpose(0, 2, 1, 3, 4).reshape(height//2, weight//2, 4, -1)
         sub_img = []
-        sub_img.append(img[:, :, pool_dec_1, :])
-        sub_img.append(img[:, :, pool_dec_2, :])
-        return sub_img
+        sub_img.append(img[:, :, mask[0], :])
+        sub_img.append(img[:, :, mask[1], :])
+
+        return sub_img, mask
 
 
 if __name__=='__main__':
     save_dir = './tmp'
-    ds = PolSAR_CD_base(root=r'/data/csl/SAR_CD/GF3', split='train', data_format='pauli', augments=Compose(RandomHorizontalFlip(0.5)))
+    ds = PolSAR(root=r'/data/csl/SAR_CD/GF3', split='train', data_format='pauli', augments=Compose(RandomHorizontalFlip(0.5)))
     idx = 73
     ds.__getitem__(idx)
 

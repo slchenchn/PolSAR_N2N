@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-04-25
+Last Modified: 2021-05-21
 	content: 
 '''
 ''' 
@@ -350,9 +350,7 @@ if __name__ == "__main__":
     run_id = utils.get_work_dir(run_id)
     writer = SummaryWriter(log_dir=run_id)
     config_fig = types.dict2fig(cfg.to_flatten_dict())
-    # plt.savefig(r'./tmp/ff.png')
     writer.add_figure('config', config_fig, close=True)
-    # writer.add_hparams(types.flatten_dict_summarWriter(cfg), {'a': 'b'})
     writer.flush()
 
     # logger
