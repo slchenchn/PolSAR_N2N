@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch import Tensor
 
 
-class NoiseNetwork(nn.Module):
+class UnetPP(nn.Module):
     """Custom U-Net architecture for Self Supervised Denoising (SSDN) and Noise2Noise (N2N).
     Base N2N implementation was made with reference to @joeylitalien's N2N implementation.
     Changes made are removal of weight sharing when blocks are reused. Usage of LeakyReLu over standard ReLu and incorporation of blindspot  unctionality.
@@ -22,8 +22,6 @@ class NoiseNetwork(nn.Module):
     Args:
         in_channels (int, optional): Number of input channels, this will 
             typically be either 1 (Mono) or 3 (RGB) but can be more. Defaults to 3.
-        out_channels (int, optional): Number of channels the final convolution 
-            should output. Defaults to 3.
         zero_output_weights (bool, optional): Whether to initialise the 
             weights of `nin_c` to zero. This is not mentioned in literature but is done as part of the tensorflow implementation for the parameter estimation network. Defaults to False.
     """
@@ -31,10 +29,13 @@ class NoiseNetwork(nn.Module):
     def __init__(
         self,
         in_channels: int = 3,
-        out_channels: int = 3,
         zero_output_weights: bool = False,
+        if_print=True
     ):
-        super(NoiseNetwork, self).__init__()
+        if if_print:
+            print(f'model UnetPP:\n\tin_channels={in_channels}\n\zero_output_weights={zero_output_weights}')
+            
+        super().__init__()
         self._zero_output_weights = zero_output_weights
         self.Conv2d = nn.Conv2d
 
@@ -119,7 +120,7 @@ class NoiseNetwork(nn.Module):
         nin_a_io = 96
 
         # nin_a,b,c, linear_act
-        self.output_conv = self.Conv2d(96, out_channels, 1)
+        self.output_conv = self.Conv2d(96, in_channels, 1)
         self.output_block = nn.Sequential(
             self.Conv2d(nin_a_io, nin_a_io, 1),
             nn.LeakyReLU(negative_slope=0.1, inplace=True),

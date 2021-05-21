@@ -1,14 +1,16 @@
 model:
     arch: unetpp
-    input_nbr: 9
+    in_channels: 9
+    zero_output_weights: False
 data:
     dataloader: PolSAR
     split: data/GF3/split/denoise/Hoekman/0.9
     format: hoekman
     path: data/GF3
-    mirror: True 
+    # mirror: True 
     norm: False
 train:
+    gpu: [0]
     augment: 
         'hflip': 0.5
         'vflip': 0.5
@@ -29,19 +31,12 @@ train:
     loss:
         name: 'N2N_loss'
         gamma: 1
-        # weight: [0.02, 0.98]
-        # name: 'focal_loss_2d'
-        # alpha: 1
-        # gamma: 1
         # reduction: 'mean'
     lr: 
         name: 'constant_lr'
         # name: 'poly_lr_chen'
         # max_iter: 2000
-    # resume: runs/siam-diff_cross_entropy_mask_sgd_poly_lr_chen_15//siam-diff_SAR_CD_intensity_best_model.pkl
-    # resume: runs/fresunet_cross_entropy_mask_adam_constant_lr_1/fresunet_SAR_CD_intensity_last_model.pkl
     resume: 
-    clip: False
 test:
     out_path: 'result'
     pth: 'runs/csiam-diffv2_cross_entropy_mask_adam_constant_lr_0/csiam-diffv2_PolSAR_CD_base_best_model.pkl'

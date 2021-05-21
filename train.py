@@ -64,24 +64,20 @@ def train(cfg, writer, logger):
 
     t_loader = data_loader(
         data_path,
-        # transform=None,
-        # time_shuffle = cfg.data.time_shuffle,
-        # to_tensor=False,
         data_format = cfg.data.format,
         norm = cfg.data.norm,
-        split=cfg.data.train_split,
+        split='train',
+        split_root = cfg.data.split,
         augments=data_aug,
-        use_perc=cfg.data.use_perc
         )
 
     v_loader = data_loader(
         data_path,
-        # transform=None,
-        # time_shuffle = cfg.data.time_shuffle,
-        # to_tensor=False,
         data_format = cfg.data.format,
-        split=cfg.data.val_split,
+        split='val',
+        split_root = cfg.data.split,
         )
+
     train_data_len = len(t_loader)
     logger.info(f'num of train samples: {train_data_len} \nnum of val samples: {len(v_loader)}')
 
@@ -98,14 +94,14 @@ def train(cfg, writer, logger):
                                   drop_last=True)
 
     valloader = data.DataLoader(v_loader, 
-                                batch_size=10, 
+                                batch_size=cfg.test.batch_size, 
                                 # persis
                                 num_workers=cfg.train.n_workers,)
 
     # Setup Model
-    device = f'cuda:{cfg.gpu[0]}'
-    model = get_model(cfg.model, 2).to(device)
-    input_size = (cfg.model.input_nbr, 512, 512)
+    device = f'cuda:{cfg.train.gpu[0]}'
+    model = get_model(cfg.model).to(device)
+    input_size = (cfg.model.in_channels, 512, 512)
     logger.info(f"Using Model: {cfg.model.arch}")
     logger.info(f'model summary: {summary(model, input_size=(input_size, input_size), is_complex=False)}')
     model = torch.nn.DataParallel(model, device_ids=cfg.gpu)      #自动多卡运行，这个好用
@@ -179,7 +175,7 @@ def train(cfg, writer, logger):
     train_val_start_time = time.time()
     model.train()   
     while it < train_iter:
-        for (file_a, file_b, label, mask) in trainloader:
+        for (img, sub_img1, sub_img2, mask) in trainloader:
             it += 1           
             file_a = file_a.to(device)            
             file_b = file_b.to(device)            

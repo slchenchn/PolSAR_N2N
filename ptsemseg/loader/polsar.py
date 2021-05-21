@@ -24,8 +24,10 @@ from matplotlib import pyplot as plt
 from mylib import polSAR_utils as psr
 from mylib import labelme_utils as lbm
 from mylib import file_utils as fu
+from mylib import types
 from ptsemseg.augmentations.augmentations import *
 
+_tmp_path = './tmp'
 
 class PolSAR(data.Dataset):
     ''' PolSAR Neighbor2Neighbor dataloaders 
@@ -146,20 +148,15 @@ class PolSAR(data.Dataset):
     def __getitem__(self, index):
         img = self.get_file_data(index)
         
-        # save_dir = './tmp'
         # cv2.imwrite(osp.join(save_dir, 'p_fila_a.png'), (file_a.permute(1,2,0).numpy()*255).astype(np.uint8))
-        # cv2.imwrite(osp.join(save_dir, 'p_fila_b.png'), (file_b.permute(1,2,0).numpy()*255).astype(np.uint8))    
-        # cv2.imwrite(osp.join(save_dir, 'p_mask.png'), (mask.numpy()*255).astype(np.uint8))
-        # cv2.imwrite(osp.join(save_dir, 'p_label.png'), (label.numpy()*255).astype(np.uint8))
 
         if self.augments:
-            img, _ = self.augments(img, img)
-        return file_a, file_b, label, mask
-
+            img = self.augments(img)
+        
         # cv2.imwrite(osp.join(save_dir, 'a_fila_a.png'), (file_a.permute(1,2,0).numpy()*255).astype(np.uint8))
-        # cv2.imwrite(osp.join(save_dir, 'a_fila_b.png'), (file_b.permute(1,2,0).numpy()*255).astype(np.uint8))    
-        # cv2.imwrite(osp.join(save_dir, 'a_mask.png'), (mask.numpy()*255).astype(np.uint8))
-        # cv2.imwrite(osp.join(save_dir, 'a_label.png'), (label.numpy()*255).astype(np.uint8))
+
+        sub_img, mask = self.rand_pool(img)
+        return img, types.list_numpy_to_torch(sub_img), mask
     
     def rand_pool(self, img, mask=None):
         ''' Random pooling 

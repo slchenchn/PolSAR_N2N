@@ -3,7 +3,8 @@
 # note
 `model`: unetpp.py, 
 
-# plan
+# TODO
 - [x] rand_pool
 - [x] rand_pool
-
+- [ ] test the PolSAR data loader
+- [ ] write the N2N loss
