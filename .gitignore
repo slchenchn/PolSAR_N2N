@@ -1,0 +1,8 @@
+data/*
+result/*
+runs/*
+tmp/*
+.vscode
+.ipynb_checkpoints
+ptsemseg/models/imagenet
+ptsemseg/models/EffNet

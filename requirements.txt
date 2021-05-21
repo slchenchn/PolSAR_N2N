@@ -1,0 +1,15 @@
+PyQt5>=5.9.2
+opencv-python
+sklearn
+matplotlib>=2.0.0
+scipy
+tqdm
+protobuf
+pyyaml
+natsort
+scikit-image
+albumentations
+imgviz
+tensorboard
+labelme
+torchlars
