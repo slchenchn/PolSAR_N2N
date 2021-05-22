@@ -15,4 +15,4 @@
 - [x] rand_pool
 - [x] test the PolSAR data loader
 - [x] write the N2N loss
-- [x] debug the model, the loss value is too large
+- [ ] debug the model, the loss value is too large
