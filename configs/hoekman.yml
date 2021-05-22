@@ -5,7 +5,7 @@ model:
 data:
     dataloader: PolSAR
     split: data/GF3/split/denoise/Hoekman/0.9
-    format: hoekman
+    format: Hoekman
     path: data/GF3
     # mirror: True 
     norm: False
@@ -17,9 +17,9 @@ train:
         'vflip': 0.5
         # 'rotate': 180
     epoch: 100
-    batch_size: 4
+    batch_size: 16
     val_interval: 30
-    n_workers: 4
+    n_workers: 16
     print_interval: 10
     optimizer:
         name: 'adam'    
@@ -45,6 +45,6 @@ test:
     pth: 'runs/csiam-diffv2_cross_entropy_mask_adam_constant_lr_0/csiam-diffv2_PolSAR_CD_base_best_model.pkl'
     gpu: [0]
     augments:
-    batch_size: 8
-    n_workers: 8
+    batch_size: 64
+    n_workers: 16
     dataset: 'test'

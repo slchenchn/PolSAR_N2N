@@ -6,6 +6,10 @@
 # note
 `model`: unetpp.py, 
 
+# now
+- without model summary
+- without printing cfg to tensorboard
+- without wrapped loss func
 
 # TODO
 - [x] rand_pool

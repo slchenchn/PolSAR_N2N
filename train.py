@@ -104,7 +104,7 @@ def train(cfg, writer, logger):
     model = get_model(cfg.model).to(device)
     input_size = (cfg.model.in_channels, 512, 512)
     logger.info(f"Using Model: {cfg.model.arch}")
-    logger.info(f'model summary: {summary(model, input_size=(input_size, input_size), is_complex=False)}')
+    # logger.info(f'model summary: {summary(model, input_size=(input_size, input_size), is_complex=False)}')
     model = torch.nn.DataParallel(model, device_ids=cfg.gpu)      #自动多卡运行，这个好用
     
     # Setup optimizer, lr_scheduler and loss function
@@ -117,11 +117,8 @@ def train(cfg, writer, logger):
         optimizer = LARS(optimizer=optimizer)
         logger.info(f'warp optimizer with {cfg.train.optimizer.wrap}')
     scheduler = get_scheduler(optimizer, cfg.train.lr)
-    loss_fn = get_loss_function(cfg)
-    logger.info(f"Using loss ,{str(cfg.train.loss)}")
-
-    if cfg.train.clip:
-        logger.info(f'max grad norm: {cfg.train.clip}')
+    # loss_fn = get_loss_function(cfg)
+    # logger.info(f"Using loss ,{str(cfg.train.loss)}")
 
     # load checkpoints
     val_cls_1_acc = 0
@@ -284,7 +281,6 @@ def train(cfg, writer, logger):
 
 if __name__ == "__main__":
     cfg = args.get_argparser('configs/hoekman.yml')
-    del cfg.test
     
     # choose deterministic algorithms, and disable benchmark for variable size input
     torch.backends.cudnn.deterministic = True
@@ -298,12 +294,12 @@ if __name__ == "__main__":
     np.random.default_rng(seed)
     
     # generate work dir
-    run_id = osp.join(r'runs', cfg.model.arch + '_' + cfg.train.loss.name + '_' + cfg.train.optimizer.name+ '_' + cfg.train.epoch)
+    run_id = osp.join(r'runs', cfg.model.arch + '_' + cfg.train.loss.name + '_' + cfg.train.optimizer.name+ '_' + str(cfg.train.epoch))
     run_id = utils.get_work_dir(run_id)
     writer = SummaryWriter(log_dir=run_id)
-    config_fig = types.dict2fig(cfg.to_flatten_dict())
-    writer.add_figure('config', config_fig, close=True)
-    writer.flush()
+    # config_fig = types.dict2fig(cfg.to_flatten_dict())
+    # writer.add_figure('config', config_fig, close=True)
+    # writer.flush()
 
     # logger
     logger = get_logger(run_id)

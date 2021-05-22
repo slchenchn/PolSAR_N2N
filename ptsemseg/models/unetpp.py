@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-05-21
-Last Modified: 2021-05-21
+Last Modified: 2021-05-22
 	content: PyTorch implementation of U-Net model for N2N and SSDN.
     adapted from https://github.com/COMP6248-Reproducability-Challenge/selfsupervised-denoising/blob/master-with-report/ssdn/ssdn/models/noise_network.py
     note: this network is partially asymmetric
@@ -33,7 +33,7 @@ class UnetPP(nn.Module):
         if_print=True
     ):
         if if_print:
-            print(f'model UnetPP:\n\tin_channels={in_channels}\n\zero_output_weights={zero_output_weights}')
+            print(f'model UnetPP:\n\tin_channels={in_channels}\n\tzero_output_weights={zero_output_weights}')
             
         super().__init__()
         self._zero_output_weights = zero_output_weights

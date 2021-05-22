@@ -33,44 +33,6 @@ def get_work_dir(run_id:str):
     return run_id
 
 
-class RandPool():
-    ''' random 2x2 pooling '''
-
-    def __init__(self, img) -> None:
-        ''' encode and decode to get indices
-        Args:
-            img (Tensor): [NxCxHxW] shape of tensor
-        '''
-        
-        # enc:      0   1   2   3   4   5  
-        # dec_1:    0   0   0   1   1   2
-        # dec_2:    1   2   3   2   3   3
-        n, h, w, _ = img.shape
-        pool_enc = torch.randint(0, 6, size=(n, h//2, w//2))
-        self.pool_dec_1 = (pool_enc-1) // 2
-        self.pool_dec_1[self.pool_dec_1<0] = 0
-        self.pool_dec_2 = pool_enc%3 + self.pool_dec_1 + 1
-        self.pool_dec_2[pool_enc==5] = 3
-
-
-    def apply_mask(self, img):
-        ''' apply created mask to a image '''
-
-        n, _, h, w = img.shape
-        assert self.pool_dec_1.shape
-        # retrive sub image
-        h_idx = np.arange(h//2).repeat(w//2)
-        w_idx = np.tile(np.arange(w//2), h//2)
-
-        n, h, w, c = img.shape
-        assert
-        img_ = img.reshape(h//2, 2, w//2, 2, c).transpose(0, 2, 1, 3, 4).reshape(h//2, w//2, 4, c)
-        sub_img = []
-        sub_img.append(img_[h_idx, w_idx, self.pool_dec_1.flatten(), :].reshape(h//2, w//2, c))
-        sub_img.append(img_[h_idx, w_idx, self.pool_dec_2.flatten(), :].reshape(h//2, w//2, c))
-        return sub_img
-
-
 def split_train_val_test(src_path, dst_path, data_format, train_ratio=0.8):
     ''' Random split the training, validation, test set using specific ratio of number of training samples
 
