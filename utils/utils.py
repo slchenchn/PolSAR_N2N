@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-04-25
+Last Modified: 2021-05-22
 	content: 
 '''
 import math
@@ -69,29 +69,6 @@ class RandPool():
         sub_img.append(img_[h_idx, w_idx, self.pool_dec_1.flatten(), :].reshape(h//2, w//2, c))
         sub_img.append(img_[h_idx, w_idx, self.pool_dec_2.flatten(), :].reshape(h//2, w//2, c))
         return sub_img
-
-
-
-
-def rand_pool(self, img, mask=None):
-    ''' Random pooling 
-    Args:
-        img (ndarray): image file, whose shape should be divisible by 2
-        
-    Returns:
-
-    '''
-    height, weight, channel = img.shape
-    pool_enc = np.random.randint(0, 6, size=(height//2, weight//2))
-    self.pool_dec_1 = (pool_enc-1) // 2
-    self.pool_dec_1[self.pool_dec_1<0] = 0        # because -1//2 = 1
-    self.pool_dec_2 = (pool_enc)%3 + self.pool_dec_1 + 1
-    img = img.reshape(height//2, 2, weight//2, 2, -1)
-    img = img.transpose(0, 2, 1, 3, 4).reshape(height//2, weight//2, 4, -1)
-    sub_img = []
-    sub_img.append(img[:, :, self.pool_dec_1, :])
-    sub_img.append(img[:, :, self.pool_dec_2, :])
-    return sub_img
 
 
 def split_train_val_test(src_path, dst_path, data_format, train_ratio=0.8):
