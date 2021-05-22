@@ -16,3 +16,4 @@
 - [x] test the PolSAR data loader
 - [x] write the N2N loss
 - [ ] debug the model, the loss value is too large, either log the Hoekman data or somethings else
+- [ ] run multiple trails using .sh file
