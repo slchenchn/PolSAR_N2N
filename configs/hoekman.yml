@@ -9,6 +9,7 @@ data:
     path: data/GF3
     # mirror: True 
     norm: False
+    synthetic: False
 train:
     gpu: [0]
     augment: 
@@ -30,7 +31,9 @@ train:
 
     loss:
         name: 'N2N_loss'
-        gamma: 1
+        gamma: 
+            base: 1
+            const: False
         # reduction: 'mean'
     lr: 
         name: 'constant_lr'

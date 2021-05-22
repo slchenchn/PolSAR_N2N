@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-05-21
+Last Modified: 2021-05-22
 	content: 
 '''
 import shutil
@@ -13,6 +13,7 @@ import re
 from random import shuffle
 
 import torch
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils import data
@@ -25,9 +26,9 @@ from mylib import polSAR_utils as psr
 from mylib import labelme_utils as lbm
 from mylib import file_utils as fu
 from mylib import types
-from ptsemseg.augmentations.augmentations import *
-
-_tmp_path = './tmp'
+from mylib import mathlib
+from mylib import my_torch_tools as mt
+# import ptsemseg.augmentations.augmentations
 
 class PolSAR(data.Dataset):
     ''' PolSAR Neighbor2Neighbor dataloaders 
@@ -48,7 +49,7 @@ class PolSAR(data.Dataset):
                 split = "train",
                 augments=None,
                 data_format = 'Hoekman',
-                norm=False
+                norm=False,
                 ):
         super().__init__()
         self.file_root = file_root
@@ -62,11 +63,11 @@ class PolSAR(data.Dataset):
             self.sensor = 'RS2'
         else:
             raise IOError('don\' know the sensor type')
-        
-        print(f'split: {split}\n\tfile root: {file_root}\n\taugment: {augments}\n\tdata format: {data_format}\n\tnorm: {norm}')
 
         # read all files' path
-        self.files_path = fu.read_file_as_list(osp.join(split_root, split))
+        self.files_path = fu.read_file_as_list(osp.join(split_root, split+'.txt'))
+        
+        print(f'split: {split}\n\tfile root: {file_root}\n\tsensor: {self.sensor}\n\taugment: {augments}\n\tdata format: {data_format}\n\tnorm: {norm}\n\tlen: {self.__len__()}')
 
     def __len__(self):
         return len(self.files_path)
@@ -146,7 +147,7 @@ class PolSAR(data.Dataset):
         return file
 
     def __getitem__(self, index):
-        img = self.get_file_data(index)
+        img = torch.from_numpy(self.get_file_data(index))
         
         # cv2.imwrite(osp.join(save_dir, 'p_fila_a.png'), (file_a.permute(1,2,0).numpy()*255).astype(np.uint8))
 
@@ -155,11 +156,11 @@ class PolSAR(data.Dataset):
         
         # cv2.imwrite(osp.join(save_dir, 'a_fila_a.png'), (file_a.permute(1,2,0).numpy()*255).astype(np.uint8))
 
-        sub_img, mask = self.rand_pool(img)
-        return img, types.list_numpy_to_torch(sub_img), mask
+        return img
     
-    def rand_pool(self, img, mask=None):
-        ''' Random pooling 
+    @staticmethod
+    def rand_pool_old(img, mask=None):
+        ''' Random pooling, this version is 
         Args:
             img (ndarray): image file, in shape of [height, weight, channel],
                 whose shape should be divisible by 2
@@ -170,38 +171,53 @@ class PolSAR(data.Dataset):
             mask (list): subsample mask
         '''
 
+        # check variable type
+        if isinstance(img, Tensor):
+            img = img.numpy()
+
         # generate mask if None
+        h, w, c = img.shape
         if mask is None:
-            height, weight, channel = img.shape
-            pool_enc = np.random.randint(0, 6, size=(height//2, weight//2))
+            pool_enc = np.random.randint(0, 6, size=(h//2, w//2))
             pool_dec_1 = (pool_enc-1) // 2
-            pool_dec_1[pool_dec_1<0] = 0        # because -1//2 = 1
-            pool_dec_2 = (pool_enc)%3 + pool_dec_1 + 1
-            mask = [pool_dec_1, pool_dec_2]
+            pool_dec_1[pool_dec_1<0] = 0
+            pool_dec_2 = pool_enc%3 + pool_dec_1 + 1
+            pool_dec_2[pool_enc==5] = 3
+            mask = [pool_dec_1.flatten(), pool_dec_2.flatten()]
             shuffle(mask)
 
         # apply subsample mask
-        img = img.reshape(height//2, 2, weight//2, 2, -1)
-        img = img.transpose(0, 2, 1, 3, 4).reshape(height//2, weight//2, 4, -1)
-        sub_img = []
-        sub_img.append(img[:, :, mask[0], :])
-        sub_img.append(img[:, :, mask[1], :])
+        img_ = img.reshape(h//2, 2, w//2, 2, c).transpose(0, 2, 1, 3, 4).reshape(h//2, w//2, 4, c)
+        h_idx = np.arange(h//2).repeat(w//2)
+        w_idx = np.tile(np.arange(w//2), h//2)
+        sub_imgs = []
+        sub_imgs.append(img_[h_idx, w_idx, mask[0], :].reshape(h//2, w//2, c))
+        sub_imgs.append(img_[h_idx, w_idx, mask[1], :].reshape(h//2, w//2, c))
 
-        return sub_img, mask
+        return sub_imgs, mask
 
 
 if __name__=='__main__':
-    save_dir = './tmp'
-    ds = PolSAR(root=r'/data/csl/SAR_CD/GF3', split='train', data_format='pauli', augments=Compose(RandomHorizontalFlip(0.5)))
-    idx = 73
-    ds.__getitem__(idx)
+        
+    h = 100
+    img = np.arange(h**2).reshape(h, h, 1)
+    img = np.tile(img, (1, 1, 3))
+    sub_imgs, mask = PolSAR.rand_pool(img)
+    img = np.transpose(img, (2, 0, 1))
+    sub_imgs = [np.transpose(sub, (2, 0, 1)) for sub in sub_imgs]
 
-    file_a, file_b = ds.get_files_data(idx)
-    label, mask = ds.get_label_and_mask(idx)
-    ds.statistics()
-    cv2.imwrite(osp.join(save_dir, 'fila_a.png'), (file_a.permute(1,2,0).numpy()*255).astype(np.uint8))
-    cv2.imwrite(osp.join(save_dir, 'fila_b.png'), (file_b.permute(1,2,0).numpy()*255).astype(np.uint8))    
-    cv2.imwrite(osp.join(save_dir, 'mask.png'), (mask.numpy()*255).astype(np.uint8))
-    cv2.imwrite(osp.join(save_dir, 'label.png'), (label.numpy()*255).astype(np.uint8))
+    print(f'before:\n{img}')
+    print('\n')
+    print(f'after:\n{sub_imgs[0]}\n\n{sub_imgs[1]}\n\nmask:\n{mask}')
+
+    # mask = np.stack(mask).reshape(-1)
+    unique, counts = np.unique(mask[0], return_counts=True)
+    print(f'hist of mask 0: {dict(zip(unique, counts))}')
+
+    unique, counts = np.unique(mask[1], return_counts=True)
+    print(f'hist of mask 1: {dict(zip(unique, counts))}')
+    
     print('done')
+
+
 

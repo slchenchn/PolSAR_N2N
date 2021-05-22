@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-21
+Last Modified: 2021-05-22
 	content: 
 '''
 ''' 
@@ -41,6 +41,7 @@ from ptsemseg.metrics import runningScore, averageMeter
 from ptsemseg.augmentations import get_composed_augmentations
 from ptsemseg.schedulers import get_scheduler
 from ptsemseg.optimizers import get_optimizer
+from ptsemseg.loader.rand_pool import generate_mask_pair, generate_subimages
 
 from mylib import nestargs
 from mylib import types
@@ -168,6 +169,7 @@ def train(cfg, writer, logger):
     runing_metrics_train = runningScore(2)
     val_loss_meter = averageMeter()
     train_time_meter = averageMeter()
+    train_loss_meter = averageMeter()
 
     # train
     it = start_iter
@@ -175,128 +177,96 @@ def train(cfg, writer, logger):
     train_val_start_time = time.time()
     model.train()   
     while it < train_iter:
-        for (img, sub_img1, sub_img2, mask) in trainloader:
-            it += 1           
-            file_a = file_a.to(device)            
-            file_b = file_b.to(device)            
-            label = label.to(device)            
-            mask = mask.to(device)
+        for noisy in trainloader:
+            it += 1   
+            noisy = noisy.to(device)
+            mask1, mask2 = generate_mask_pair(noisy)
+            noisy_sub1 = generate_subimages(noisy, mask1)
+            noisy_sub2 = generate_subimages(noisy, mask2)
 
-            optimizer.zero_grad()
-            # print(f'dtype: {file_a.dtype}')
-            outputs = model(file_a, file_b)
-            loss = loss_fn(input=outputs, target=label, mask=mask)
-            loss.backward()
-            
-            # grads = []
-            # for param in model.parameters():
-            #     grads.append(param.grad.view(-1))
-            # grads = torch.cat(grads)
-            # grads = torch.abs(grads)
-            # grads_total_norm = tt.get_params_norm(model.parameters(), norm_type=1)
-            # writer.add_scalars('grads/unnormed', {'mean': grads.mean(), 'max':grads.max(), 'total':grads_total_norm}, it)
+            # preparing for the regularization term
+            with torch.no_grad():
+                noisy_denoised = model(noisy)
+            noisy_sub1_denoised = generate_subimages(noisy_denoised, mask1)
+            noisy_sub2_denoised = generate_subimages(noisy_denoised, mask2)
 
-            # logger.info(f'max grad: {grads.max()}, mean grad: {grads.mean()}')
-            # print('conv11: ', model.conv11.weight.grad, model.conv11.weight.grad.shape)
-            # print('conv21: ', model.conv21.weight.grad, model.conv21.weight.grad.shape)
-            # print('conv31: ', model.conv31.weight.grad, model.conv31.weight.grad.shape)
+            # calculating the loss 
+            noisy_output = model(noisy_sub1)
+            noisy_target = noisy_sub2
+            if cfg.train.loss.gamma.const:
+                gamma = cfg.train.loss.gamma.base
+            else:
+                gamma = it / train_iter * cfg.train.loss.gamma.base
+
+            diff = noisy_output - noisy_target
+            exp_diff = noisy_sub1_denoised - noisy_sub2_denoised
+            loss1 = torch.mean(diff**2)
+            loss2 = gamma * torch.mean((diff - exp_diff)**2)
+            loss_all = loss1 + loss2
+            loss_all.backward()
 
             # In PyTorch 1.1.0 and later, you should call `optimizer.step()` before `lr_scheduler.step()`
-
-            if cfg.train.clip:
-                nn.utils.clip_grad_norm_(model.parameters(), max_norm=cfg.train.clip, norm_type=1)
-
-            # grads = []
-            # for param in model.parameters():
-            #     grads.append(param.grad.view(-1))
-            # grads = torch.cat(grads)
-            # grads = torch.abs(grads)
-            # grads_total_norm = tt.get_params_norm(model.parameters(), norm_type=1)
-            # writer.add_scalars('grads/normed', {'mean': grads.mean(), 'max':grads.max(), 'total':grads_total_norm}, it)
-
             optimizer.step()
             scheduler.step()
             
-            # record the acc of the minibatch
-            pred = outputs.max(1)[1].cpu().numpy()
-            runing_metrics_train.update(label.cpu().numpy(), pred, mask.cpu().numpy())
-
+            # record the loss of the minibatch
+            train_loss_meter.update(loss_all)
             train_time_meter.update(time.time() - train_start_time)
 
+            if cfg.data.synthetic:
+                pass
+
             if it % cfg.train.print_interval == 0:
-                # acc of the samples between print_interval
-                score, _ = runing_metrics_train.get_scores()
-                train_cls_0_acc, train_cls_1_acc = score['Acc']
-                fmt_str = "Iter [{:d}/{:d}]  train Loss: {:.4f}  Time/Image: {:.4f},\n0:{:.4f}\n1:{:.4f}"
-                print_str = fmt_str.format(it,
-                                           train_iter,
-                                           loss.item(),      #extracts the loss’s value as a Python float.
-                                           train_time_meter.avg / cfg.train.batch_size,train_cls_0_acc, train_cls_1_acc)
+                terminal_info = f"Iter [{it:d}/{train_iter:d}]  \
+                                train Loss: {train_loss_meter.avg:.4f}  \
+                                Time/Image: {train_time_meter.avg / cfg.train.batch_size:.4f}"  
+
+                logger.info(terminal_info)
+                writer.add_scalar('loss/train_loss', train_loss_meter.avg, it)
+                
+                if cfg.data.synthetic:
+                    pass
+
                 runing_metrics_train.reset()
                 train_time_meter.reset()
-                logger.info(print_str)
-                writer.add_scalar('loss/train_loss', loss.item(), it)
-                writer.add_scalars('metrics/train', {'cls_0':train_cls_0_acc, 'cls_1':train_cls_1_acc}, it)
-                # writer.add_scalar('train_metrics/acc/cls_0', train_cls_0_acc, it)
-                # writer.add_scalar('train_metrics/acc/cls_1', train_cls_1_acc, it)
+                train_loss_meter.reset()
 
             if it % cfg.train.val_interval == 0 or \
                it == train_iter:
                 val_start_time = time.time()
                 model.eval()            # change behavior like drop out
                 with torch.no_grad():   # disable autograd, save memory usage
-                    for (file_a_val, file_b_val, label_val, mask_val) in valloader:      
-                        file_a_val = file_a_val.to(device)            
-                        file_b_val = file_b_val.to(device)
+                    for noisy in valloader:      
+                        noisy = noisy.to(device)
+                        noisy_denoised = model(noisy)
+                        
+                        if cfg.data.synthetic:
+                            pass
+                        else:
+                            val_loss = torch.mean((noisy_denoised-noisy)**2)
 
-                        outputs = model(file_a_val, file_b_val)
-                        # tensor.max() returns the maximum value and its indices
-                        pred = outputs.max(1)[1].cpu().numpy()
-                        running_metrics_val.update(label_val.numpy(), pred, mask_val.numpy())
-            
-                        label_val = label_val.to(device)            
-                        mask_val = mask_val.to(device)
-                        val_loss = loss_fn(input=outputs, target=label_val, mask=mask_val)
-                        val_loss_meter.update(val_loss.item())
-
-                score, _ = running_metrics_val.get_scores()
-                val_cls_0_acc, val_cls_1_acc = score['Acc']
+                        val_loss_meter.update(val_loss)
 
                 writer.add_scalar('loss/val_loss', val_loss_meter.avg, it)
-                logger.info(f"Iter [{it}/{train_iter}], val Loss: {val_loss_meter.avg:.4f} Time/Image: {(time.time()-val_start_time)/len(v_loader):.4f}\n0: {val_cls_0_acc:.4f}\n1:{val_cls_1_acc:.4f}")
-                # lr_now = optimizer.param_groups[0]['lr']
-                # logger.info(f'lr: {lr_now}')
-                # writer.add_scalar('lr', lr_now, it+1)
-
-                logger.info('0: {:.4f}\n1:{:.4f}'.format(val_cls_0_acc, val_cls_1_acc))
-                micro_OA = score['Overall_Acc']
-                miou = score['Mean_IoU']
-                logger.info(f'overall acc: {micro_OA}, mean iou: {miou}')
-                writer.add_scalars('metrics/val', {'cls_0':val_cls_0_acc, 'cls_1':val_cls_1_acc}, it)
-                # writer.add_scalar('val_metrics/acc/cls_0', val_cls_0_acc, it)
-                # writer.add_scalar('val_metrics/acc/cls_1', val_cls_1_acc, it)
+                logger.info(f"Iter [{it}/{train_iter}], val Loss: {val_loss_meter.avg:.4f} Time/Image: {(time.time()-val_start_time)/len(v_loader):.4f}")
+                
+                if cfg.data.synthetic:
+                    pass
 
                 val_loss_meter.reset()
                 running_metrics_val.reset()
 
-                # OA=score["Overall_Acc"]
-                val_macro_OA = (val_cls_0_acc+val_cls_1_acc)/2
-                if val_macro_OA >= best_macro_OA_now and it>200:
-                    best_macro_OA_now = val_macro_OA
-                    best_macro_OA_iter_now = it
+                if it % (train_iter/cfg.train.epoch/10) == 0:
+                    ep = int(it / ((train_iter/cfg.train.epoch)))
                     state = {
                         "epoch": it,
                         "model_state": model.state_dict(),
                         "optimizer_state": optimizer.state_dict(),
                         "scheduler_state": scheduler.state_dict(),
-                        "best_macro_OA_now": best_macro_OA_now,
-                        'best_macro_OA_iter_now':best_macro_OA_iter_now,
                     }
-                    save_path = os.path.join(writer.file_writer.get_logdir(), "{}_{}_best_model.pkl".format(cfg.model.arch,cfg.data.dataloader))
+                    save_path = osp.join(writer.file_writer.get_logdir(), f"{ep}.pkl")
                     torch.save(state, save_path)
 
-                    logger.info("best OA now =  %.8f" % (best_macro_OA_now))
-                    logger.info("best OA iter now= %d" % (best_macro_OA_iter_now))
 
                 train_val_time = time.time() - train_val_start_time
                 remain_time = train_val_time * (train_iter-it) / it
@@ -310,20 +280,6 @@ def train(cfg, writer, logger):
                 model.train()
 
             train_start_time = time.time() 
-
-    logger.info("best OA now =  %.8f" % (best_macro_OA_now))
-    logger.info("best OA iter now= %d" % (best_macro_OA_iter_now))
-
-    state = {
-            "epoch": it,
-            "model_state": model.state_dict(),
-            "optimizer_state": optimizer.state_dict(),
-            "scheduler_state": scheduler.state_dict(),
-            "best_macro_OA_now": best_macro_OA_now,
-            'best_macro_OA_iter_now':best_macro_OA_iter_now,
-            }
-    save_path = os.path.join(writer.file_writer.get_logdir(), "{}_{}_last_model.pkl".format(cfg.model.arch, cfg.data.dataloader))
-    torch.save(state, save_path)
 
 
 if __name__ == "__main__":
