@@ -19,9 +19,9 @@ train:
         'vflip': 0.5
         # 'rotate': 180
     epoch: 50
-    batch_size: 4
+    batch_size: 1
     val_interval: 30
-    n_workers: 4
+    n_workers: 1
     print_interval: 10
     optimizer:
         name: 'adam'    
