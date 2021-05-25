@@ -84,7 +84,7 @@ class PolSARSimulate(data.Dataset):
 
         # read image and simulate Wishart noise
         img = cv2.imread(self.files_path[index]).astype(np.float32)
-        print(f'file path {self.files_path[index]}')
+        # print(f'file path {self.files_path[index]}')
         # h, w = img.shape[:2]
         # h = (h//2) * 2
         # w = (w//2) * 2
