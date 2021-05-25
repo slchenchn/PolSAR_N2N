@@ -1,13 +1,13 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-25
-Last Modified: 2021-05-22
+Last Modified: 2021-05-25
 	content: 
 '''
 import cv2
 from mylib import my_torch_tools as mt
 from ptsemseg.augmentations.augmentations import *
-from ptsemseg.loader.polsar import *
+from ptsemseg.loader.polsar_simulate import *
 import torch
 from ptsemseg.loader import rand_pool
 
@@ -16,41 +16,22 @@ _TMP_PATH = './tmp'
 
 if __name__=='__main__':
 	aug = Compose([RandomHorizontalFlip(0.5), RandomVerticalFlip(0.5)])
-	ds = PolSAR(file_root=r'data/GF3', 
+	ds = PolSARSimulate(file_root=r'data/BSR/BSDS500/data/images', 
                 split_root=r'data/GF3/split/denoise/Hoekman/0.9', 
                 split='train', 
                 augments=aug,
                 data_format='Hoekman',
-                norm=True,
+                norm=False,
                 )
-	idx = 2342
+	idx = 0
 
-	img = ds.__getitem__(idx)
-	img = torch.unsqueeze(img, 0)
-	img = img.to('cuda')
-	print(f'device: {img.device}, dtype: {img.dtype}, shape: {img.shape}')
+	img, noise = ds.__getitem__(idx)
 
-	m1, m2 = rand_pool.generate_mask_pair(img, device='cuda')
-	sub1 = rand_pool.generate_subimages(img, m1).cpu().numpy()
-	sub2 = rand_pool.generate_subimages(img, m2).cpu().numpy()
+	pauli_img = psr.rgb_by_c3(img, type='sinclair')
+	pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
 
-	img = img.cpu().numpy().squeeze()
-	sub1 = sub1.squeeze()
-	sub2 = sub1.squeeze()
-	img = mt.Tensor2cv2image(img)[0]
-	sub1 = mt.Tensor2cv2image(sub1)[0]
-	sub2 = mt.Tensor2cv2image(sub2)[0]
-	sub_imgs = [sub1, sub2]
-
-	print(f'\nimg shape: {img.shape}, sub img shape: {sub_imgs[0].shape}, {sub_imgs[1].shape}\n')
-	for ii in range(3):
-		cv2.imwrite(osp.join(_TMP_PATH, f'{ii}.png'), img[..., ii*3: ii*3+3])
-
-	for jj, sub_img in enumerate(sub_imgs):
-		for ii in range(3):
-			cv2.imwrite(osp.join(_TMP_PATH, f'sub_{jj}_{ii}.png'), sub_img[..., ii*3: ii*3+3])
-
-
+	cv2.imwrite(osp.join(_TMP_PATH, 'pauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
+	cv2.imwrite(osp.join(_TMP_PATH, 'pauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
 

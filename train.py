@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-22
+Last Modified: 2021-05-25
 	content: 
 '''
 ''' 
@@ -15,7 +15,6 @@ import time
 import shutil
 import random
 import argparse
-
 
 import yaml
 import torch
@@ -32,6 +31,9 @@ from torch.utils.tensorboard import SummaryWriter
 import torchvision.models as models
 from torch.utils import data 
 from torchlars import LARS
+import cv2
+import sewar
+import piq
 
 from ptsemseg.models import get_model
 from ptsemseg.loss import get_loss_function
@@ -50,6 +52,10 @@ from mylib import my_torch_tools as tt
 from mylib.torchsummary import summary
 from utils import args
 from utils import utils
+
+
+__TMP_DIR = r'./tmp'
+
 
 def train(cfg, writer, logger):
 
@@ -167,6 +173,8 @@ def train(cfg, writer, logger):
     val_loss_meter = averageMeter()
     train_time_meter = averageMeter()
     train_loss_meter = averageMeter()
+    val_psnr_meter = averageMeter()
+    val_ssim_meter = averageMeter()
 
     # train
     it = start_iter
@@ -174,8 +182,11 @@ def train(cfg, writer, logger):
     train_val_start_time = time.time()
     model.train()   
     while it < train_iter:
-        for noisy in trainloader:
+        for _, noisy in trainloader:
             it += 1   
+            # plt.hist(noisy.flatten())
+            # plt.savefig(osp.join(__TMP_DIR, 'hist2.jpg'))
+
             noisy = noisy.to(device)
             mask1, mask2 = generate_mask_pair(noisy)
             noisy_sub1 = generate_subimages(noisy, mask1)
@@ -210,9 +221,10 @@ def train(cfg, writer, logger):
             train_loss_meter.update(loss_all)
             train_time_meter.update(time.time() - train_start_time)
 
-            if cfg.data.synthetic:
+            if cfg.data.simulate:
                 pass
 
+            # print interval
             if it % cfg.train.print_interval == 0:
                 terminal_info = f"Iter [{it:d}/{train_iter:d}]  \
                                 train Loss: {train_loss_meter.avg:.4f}  \
@@ -221,37 +233,42 @@ def train(cfg, writer, logger):
                 logger.info(terminal_info)
                 writer.add_scalar('loss/train_loss', train_loss_meter.avg, it)
                 
-                if cfg.data.synthetic:
+                if cfg.data.simulate:
                     pass
 
                 runing_metrics_train.reset()
                 train_time_meter.reset()
                 train_loss_meter.reset()
 
+            # val interval
             if it % cfg.train.val_interval == 0 or \
                it == train_iter:
                 val_start_time = time.time()
-                model.eval()            # change behavior like drop out
-                with torch.no_grad():   # disable autograd, save memory usage
-                    for noisy in valloader:      
+                model.eval()            
+                with torch.no_grad():   
+                    for clean, noisy in valloader:      
                         noisy = noisy.to(device)
                         noisy_denoised = model(noisy)
                         
-                        if cfg.data.synthetic:
-                            pass
-                        else:
-                            val_loss = torch.mean((noisy_denoised-noisy)**2)
-
+                        if cfg.data.simulate:
+                            psnr = piq.psnr(clean, noisy_denoised, data_range=255)
+                            ssim = piq.ssim(clean, noisy_denoised, data_range=255)
+                            val_psnr_meter.update(psnr)
+                            val_ssim_meter.update(ssim)
+                        
+                        val_loss = torch.mean((noisy_denoised-noisy)**2)
                         val_loss_meter.update(val_loss)
 
                 writer.add_scalar('loss/val_loss', val_loss_meter.avg, it)
                 logger.info(f"Iter [{it}/{train_iter}], val Loss: {val_loss_meter.avg:.4f} Time/Image: {(time.time()-val_start_time)/len(v_loader):.4f}")
-                
-                if cfg.data.synthetic:
-                    pass
-
                 val_loss_meter.reset()
                 running_metrics_val.reset()
+                
+                if cfg.data.simulate:
+                    writer.add_scalars('metrics/val', {'psnr': val_psnr_meter.avg, 'ssim': val_ssim_meter.avg}, it)
+                    logger.info(f'psnr: {val_psnr_meter.avg},\tssim: {val_ssim_meter.avg}')
+                    val_psnr_meter.reset()
+                    val_ssim_meter.reset()
 
                 if it % (train_iter/cfg.train.epoch/10) == 0:
                     ep = int(it / ((train_iter/cfg.train.epoch)))
@@ -263,6 +280,7 @@ def train(cfg, writer, logger):
                     }
                     save_path = osp.join(writer.file_writer.get_logdir(), f"{ep}.pkl")
                     torch.save(state, save_path)
+                    logger.info(f'saved model state dict at {save_path}')
 
 
                 train_val_time = time.time() - train_val_start_time

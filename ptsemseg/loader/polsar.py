@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-05-22
+Last Modified: 2021-05-25
 	content: 
 '''
 import shutil
@@ -21,6 +21,7 @@ from torchvision import transforms
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt 
+from scipy import special
 
 from mylib import polSAR_utils as psr
 from mylib import labelme_utils as lbm
@@ -41,6 +42,8 @@ class PolSAR(data.Dataset):
         data_format (str): "Hoekman" or "complex_vector_6" or 
             "complex_vector_9" or 's2'. Default: "Hoekman"
         norm (bool): whether to read normed or unnormed data. Default: False
+        log (bool): whether to log transform the data value, only valid for hoekman decomposition. Default: True
+        ENL (int): equivalent numober of looks. Default: 1
     '''
     
     def __init__(self, 
@@ -50,13 +53,22 @@ class PolSAR(data.Dataset):
                 augments=None,
                 data_format = 'Hoekman',
                 norm=False,
+                log = True,
+                ENL = 1,
                 ):
         super().__init__()
         self.file_root = file_root
         self.augments = augments
         self.data_format = data_format
         self.norm = norm
+        self.log = log
+        self.ENL = ENL
+
+        # compensate for the mean value of log tranformed intensites
+        if log:
+            self.log_compensation = np.log(ENL) - special.digamma(ENL)
         
+        # determine sensor type for future purpose
         if 'GF3' in file_root:
             self.sensor = 'GF3'
         elif 'RS2' in file_root:
@@ -67,7 +79,7 @@ class PolSAR(data.Dataset):
         # read all files' path
         self.files_path = fu.read_file_as_list(osp.join(split_root, split+'.txt'))
         
-        print(f'split: {split}\n\tfile root: {file_root}\n\tsensor: {self.sensor}\n\taugment: {augments}\n\tdata format: {data_format}\n\tnorm: {norm}\n\tlen: {self.__len__()}')
+        print(f'split: {split}\n\tfile root: {file_root}\n\tsensor: {self.sensor}\n\tdata format: {data_format}\n\tnorm: {norm}\n\tlen: {self.__len__()}')
 
     def __len__(self):
         return len(self.files_path)
@@ -140,6 +152,8 @@ class PolSAR(data.Dataset):
             else:
                 file_path = osp.join(folder_path, 'unnormed.npy')
             file = np.load(file_path)
+            if self.log:
+                file = np.log(file) + self.log_compensation
 
         else:
             raise NotImplementedError
@@ -157,44 +171,6 @@ class PolSAR(data.Dataset):
         # cv2.imwrite(osp.join(save_dir, 'a_fila_a.png'), (file_a.permute(1,2,0).numpy()*255).astype(np.uint8))
 
         return img
-    
-    @staticmethod
-    def rand_pool_old(img, mask=None):
-        ''' Random pooling, this version is 
-        Args:
-            img (ndarray): image file, in shape of [height, weight, channel],
-                whose shape should be divisible by 2
-            mask (list): subsample mask, if None, this func generates one. 
-                Default: None
-        Returns:
-            sub_img (list): two subsampled images
-            mask (list): subsample mask
-        '''
-
-        # check variable type
-        if isinstance(img, Tensor):
-            img = img.numpy()
-
-        # generate mask if None
-        h, w, c = img.shape
-        if mask is None:
-            pool_enc = np.random.randint(0, 6, size=(h//2, w//2))
-            pool_dec_1 = (pool_enc-1) // 2
-            pool_dec_1[pool_dec_1<0] = 0
-            pool_dec_2 = pool_enc%3 + pool_dec_1 + 1
-            pool_dec_2[pool_enc==5] = 3
-            mask = [pool_dec_1.flatten(), pool_dec_2.flatten()]
-            shuffle(mask)
-
-        # apply subsample mask
-        img_ = img.reshape(h//2, 2, w//2, 2, c).transpose(0, 2, 1, 3, 4).reshape(h//2, w//2, 4, c)
-        h_idx = np.arange(h//2).repeat(w//2)
-        w_idx = np.tile(np.arange(w//2), h//2)
-        sub_imgs = []
-        sub_imgs.append(img_[h_idx, w_idx, mask[0], :].reshape(h//2, w//2, c))
-        sub_imgs.append(img_[h_idx, w_idx, mask[1], :].reshape(h//2, w//2, c))
-
-        return sub_imgs, mask
 
 
 if __name__=='__main__':

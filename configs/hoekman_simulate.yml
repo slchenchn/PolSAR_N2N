@@ -3,23 +3,25 @@ model:
     in_channels: 9
     zero_output_weights: False
 data:
-    dataloader: PolSAR
-    split: data/GF3/split/denoise/Hoekman/0.9
+    dataloader: PolSAR_simulate
+    split: data/SAR_CD/GF3/split/denoise/Hoekman/0.9
     format: Hoekman
-    path: data/GF3
+    path: data/BSR/BSDS500/data/images
     # mirror: True 
     norm: False
-    synthetic: False
+    log: False
+    ENL: 1
+    simulate: True
 train:
     gpu: [0]
     augment: 
         'hflip': 0.5
         'vflip': 0.5
         # 'rotate': 180
-    epoch: 100
-    batch_size: 16
+    epoch: 50
+    batch_size: 4
     val_interval: 30
-    n_workers: 16
+    n_workers: 4
     print_interval: 10
     optimizer:
         name: 'adam'    
@@ -32,8 +34,8 @@ train:
     loss:
         name: 'N2N_loss'
         gamma: 
-            base: 1
-            const: False
+            base: 0
+            const: True
         # reduction: 'mean'
     lr: 
         name: 'constant_lr'
@@ -45,6 +47,6 @@ test:
     pth: 'runs/csiam-diffv2_cross_entropy_mask_adam_constant_lr_0/csiam-diffv2_PolSAR_CD_base_best_model.pkl'
     gpu: [0]
     augments:
-    batch_size: 64
+    batch_size: 16
     n_workers: 16
     dataset: 'test'

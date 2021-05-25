@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-05-22
-Last Modified: 2021-05-22
+Last Modified: 2021-05-25
 	content: adapt from https://github.com/TaoHuang2018/Neighbor2Neighbor/blob/main/training_script.md
 '''
 

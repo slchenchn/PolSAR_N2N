@@ -10,6 +10,7 @@
 - without model summary
 - without printing cfg to tensorboard
 - without wrapped loss func
+- the expectation value of logarithm of SAR intensity is not equal to logarithm of its expectation vallue, correlation is needed. See MuLoG, assume number of looks = 1
 
 # TODO
 - [x] rand_pool
