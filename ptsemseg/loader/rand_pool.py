@@ -77,12 +77,13 @@ def generate_subimages(img, mask):
 
 
 if __name__ == '__main__':
-    a = np.arange(4).reshape(2,2)
-    r = 100
-    a = np.tile(a, (r, r))
+    # a = np.arange(4).reshape(2,2)
+    # r = 100
+    # a = np.tile(a[np.newaxis, np.newaxis, :, :], (2, 2, r, r))
+    a = np.ones(shape=(4, 3, 320, 480))
     # print(f'before:\n', a)
 
-    a = a.reshape(1, 1, 2*r, 2*r)
+    # a = a.reshape(1, 2, 2*r, 2*r)
     a = a.astype(np.float32)
     a = torch.from_numpy(a)
     a = a.to('cuda')

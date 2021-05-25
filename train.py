@@ -187,7 +187,7 @@ def train(cfg, writer, logger):
             # plt.hist(noisy.flatten())
             # plt.savefig(osp.join(__TMP_DIR, 'hist2.jpg'))
 
-            noisy = noisy.to(device)
+            noisy = noisy.to(device, dtype=torch.float32)
             mask1, mask2 = generate_mask_pair(noisy)
             noisy_sub1 = generate_subimages(noisy, mask1)
             noisy_sub2 = generate_subimages(noisy, mask2)
@@ -220,6 +220,7 @@ def train(cfg, writer, logger):
             # record the loss of the minibatch
             train_loss_meter.update(loss_all)
             train_time_meter.update(time.time() - train_start_time)
+            writer.add_scalar('lr', optimizer.param_groups[0]['lr'], it)
 
             if cfg.data.simulate:
                 pass
@@ -247,7 +248,8 @@ def train(cfg, writer, logger):
                 model.eval()            
                 with torch.no_grad():   
                     for clean, noisy in valloader:      
-                        noisy = noisy.to(device)
+                        noisy = noisy.to(device, dtype=torch.float32)
+                        clean = clean.to(device, dtype=torch.float32)
                         noisy_denoised = model(noisy)
                         
                         if cfg.data.simulate:
@@ -298,7 +300,7 @@ def train(cfg, writer, logger):
 
 
 if __name__ == "__main__":
-    cfg = args.get_argparser('configs/hoekman.yml')
+    cfg = args.get_argparser('configs/hoekman_simulate.yml')
     
     # choose deterministic algorithms, and disable benchmark for variable size input
     torch.backends.cudnn.deterministic = True

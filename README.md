@@ -11,6 +11,7 @@
 - without printing cfg to tensorboard
 - without wrapped loss func
 - the expectation value of logarithm of SAR intensity is not equal to logarithm of its expectation vallue, correlation is needed. See MuLoG, assume number of looks = 1
+- turn off the check of assigned maximum should be less than real max value: `/home/csl/anaconda3/lib/python3.7/site-packages/piq/utils/common.py", line 54`, and set the allow_negative to True
 
 # TODO
 - [x] rand_pool
