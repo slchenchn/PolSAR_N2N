@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-25
-Last Modified: 2021-05-25
+Last Modified: 2021-05-26
 	content: 
 '''
 import cv2
@@ -22,8 +22,9 @@ if __name__=='__main__':
                 augments=aug,
                 data_format='Hoekman',
                 norm=False,
+				ENL=100,
                 )
-	idx = 0
+	idx = 3
 
 	img, noise = ds.__getitem__(idx)
 

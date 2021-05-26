@@ -9,7 +9,7 @@ data:
     path: data/BSR/BSDS500/data/images
     # mirror: True 
     norm: False
-    log: False
+    log: True
     ENL: 1
     simulate: True
 train:
@@ -19,14 +19,14 @@ train:
         'vflip': 0.5
         # 'rotate': 180
     epoch: 50
-    batch_size: 1
+    batch_size: 4
     val_interval: 30
-    n_workers: 1
+    n_workers: 4
     print_interval: 10
     optimizer:
         name: 'adam'    
         # name: 'sgd'
-        lr: 1.0e-5
+        lr: 1.0e-6
         # lr: 5.0e-4
         # weight_decay: 1.0e-5
         # momentum: 0.9

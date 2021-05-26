@@ -184,8 +184,9 @@ def train(cfg, writer, logger):
     while it < train_iter:
         for _, noisy in trainloader:
             it += 1   
-            # plt.hist(noisy.flatten())
-            # plt.savefig(osp.join(__TMP_DIR, 'hist2.jpg'))
+
+            if it==1:
+                writer.add_histogram('hist/noisy', noisy, it)
 
             noisy = noisy.to(device, dtype=torch.float32)
             mask1, mask2 = generate_mask_pair(noisy)
@@ -221,6 +222,9 @@ def train(cfg, writer, logger):
             train_loss_meter.update(loss_all)
             train_time_meter.update(time.time() - train_start_time)
             writer.add_scalar('lr', optimizer.param_groups[0]['lr'], it)
+
+            if it % 1000==0:
+                writer.add_histogram('hist/pred', noisy_denoised, it)
 
             if cfg.data.simulate:
                 pass

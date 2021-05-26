@@ -1,3 +1,9 @@
+'''
+Author: Shuailin Chen
+Created Date: 2021-04-24
+Last Modified: 2021-05-25
+	content: 
+'''
 from mylib import nestargs
 import yaml
 from mylib import types
@@ -71,6 +77,21 @@ def get_argparser(config_file=None)->nestargs.NestedArgumentParser:
     # default='0.01,2.0',
     help="weights of classess"
     )
+    parser.add_argument(
+    "--train.optimizer.lr",
+    nargs='?',
+    type=float,
+    # default='0.01,2.0',
+    help="learning rate"
+    )
+    parser.add_argument(
+    "--data.ENL",
+    nargs='?',
+    type=int,
+    # default='0.01,2.0',
+    help="equivalent number of looks"
+    )
+
 
     args = parser.parse_args()
     args.config_file = args.config_file if args.config_file else config_file

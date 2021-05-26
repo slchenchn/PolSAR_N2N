@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-05-25
+Last Modified: 2021-05-26
 	content: 
 '''
 import shutil
@@ -48,6 +48,7 @@ class PolSARSimulate(data.Dataset):
         norm (bool): whether to read normed or unnormed data. Default: False
         log (bool): whether to log transform the data value, only valid for hoekman decomposition. Default: True
         ENL (int): equivalent numober of looks. Default: 1
+
     '''
     
     def __init__(self, 
@@ -59,6 +60,7 @@ class PolSARSimulate(data.Dataset):
                 norm=False,
                 log = True,
                 ENL = 1,
+                logger = None,
                 ):
         super().__init__()
         self.file_root = file_root
@@ -75,7 +77,12 @@ class PolSARSimulate(data.Dataset):
         # read all files' path
         self.files_path = glob(osp.join(file_root, r'*/*.jpg'))
         
-        print(f'split: {split}\n\tfile root: {file_root}\n\tdata format: {data_format}\n\tnorm: {norm}\n\tlen: {self.__len__()}')
+        info = f'split: {split}\n\tfile root: {file_root}\n\tdata format: {data_format}\n\tnorm: {norm}\n\tlen: {self.__len__()}\n\tENL: {ENL}\n\tlog transform:{log}'
+
+        if logger:
+            logger.info(info)
+        else:
+            print(info)
 
     def __len__(self):
         return len(self.files_path)
@@ -85,12 +92,8 @@ class PolSARSimulate(data.Dataset):
         # read image and simulate Wishart noise
         img = cv2.imread(self.files_path[index]).astype(np.float32)
         # print(f'file path {self.files_path[index]}')
-        # h, w = img.shape[:2]
-        # h = (h//2) * 2
-        # w = (w//2) * 2
-        img = img[:256, :256, :]
+        img = img[:256, :256, :]    # ensure can be divede by 32
         img[img<1] += 1         # avoid zero value
-        # img = img + 1e-6
         
 
         if self.augments:
@@ -110,6 +113,11 @@ class PolSARSimulate(data.Dataset):
         # hoekman decomposition
         img = psr.Hokeman_decomposition(img)
         noise = psr.Hokeman_decomposition(noise)
+
+        # log transform
+        if self.log:
+            img = np.log(img)
+            noise = np.log(noise)
         
         # to pytorch
         img = torch.from_numpy(img)

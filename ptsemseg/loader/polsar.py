@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-05-25
+Last Modified: 2021-05-26
 	content: 
 '''
 import shutil
@@ -55,6 +55,7 @@ class PolSAR(data.Dataset):
                 norm=False,
                 log = True,
                 ENL = 1,
+                logger = None,
                 ):
         super().__init__()
         self.file_root = file_root
@@ -79,7 +80,12 @@ class PolSAR(data.Dataset):
         # read all files' path
         self.files_path = fu.read_file_as_list(osp.join(split_root, split+'.txt'))
         
-        print(f'split: {split}\n\tfile root: {file_root}\n\tsensor: {self.sensor}\n\tdata format: {data_format}\n\tnorm: {norm}\n\tlen: {self.__len__()}')
+        info = f'split: {split}\n\tfile root: {file_root}\n\tdata format: {data_format}\n\tnorm: {norm}\n\tlen: {self.__len__()}\n\tlog transform:{log}'
+
+        if logger:
+            logger.info(info)
+        else:
+            print(info)
 
     def __len__(self):
         return len(self.files_path)
