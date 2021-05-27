@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-05-26
+Last Modified: 2021-05-27
 	content: 
 '''
 import shutil
@@ -94,7 +94,7 @@ class PolSARSimulate(data.Dataset):
         # print(f'file path {self.files_path[index]}')
         img = img[:256, :256, :]    # ensure can be divede by 32
         img[img<1] += 1         # avoid zero value
-        
+
 
         if self.augments:
             img = self.augments(torch.from_numpy(img))
@@ -123,7 +123,7 @@ class PolSARSimulate(data.Dataset):
         img = torch.from_numpy(img)
         noise = torch.from_numpy(noise)
 
-        return img, noise
+        return img, noise, self.files_path[index]
 
 
 if __name__=='__main__':

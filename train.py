@@ -107,7 +107,8 @@ def train(cfg, writer, logger):
     valloader = data.DataLoader(v_loader, 
                                 batch_size=cfg.test.batch_size, 
                                 # persis
-                                num_workers=cfg.train.n_workers,)
+                                num_workers=cfg.train.n_workers,
+                                )
 
     # Setup Model
     device = f'cuda:{cfg.train.gpu[0]}'
@@ -262,10 +263,10 @@ def train(cfg, writer, logger):
                 with torch.no_grad():   
                     for clean, noisy in valloader:      
                         noisy = noisy.to(device, dtype=torch.float32)
-                        clean = clean.to(device, dtype=torch.float32)
                         noisy_denoised = model(noisy)
                         
                         if cfg.data.simulate:
+                            clean = clean.to(device, dtype=torch.float32)
                             psnr = piq.psnr(clean, noisy_denoised, data_range=data_range)
                             ssim = piq.ssim(clean, noisy_denoised, data_range=data_range)
                             val_psnr_meter.update(psnr)
