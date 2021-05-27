@@ -116,8 +116,8 @@ class PolSARSimulate(data.Dataset):
 
         # log transform
         if self.log:
-            img = np.log(img)
-            noise = np.log(noise)
+            img = np.log(img) + self.log_compensation
+            noise = np.log(noise) + self.log_compensation
         
         # to pytorch
         img = torch.from_numpy(img)

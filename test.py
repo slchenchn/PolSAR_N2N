@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-04-12
+Last Modified: 2021-05-27
 '''
 import os.path as osp
 import matplotlib.pyplot as plt
@@ -20,8 +20,8 @@ from ptsemseg.augmentations import get_composed_augmentations
 from ptsemseg.loader import get_loader 
 from ptsemseg.models import get_model
 
-import args
-import utils
+from utils import args
+from utils import utils
 from mylib import types
 
 
@@ -110,9 +110,12 @@ def test(cfg, logger, run_id):
 
 
 if __name__=='__main__':
-    cfg = args.get_argparser('configs/psr_siamdiff_pauli.yml')
+    cfg = args.get_argparser('configs/hoekman_simulate.yml')
     del cfg.train
     torch.backends.cudnn.benchmark = True
+
+    # choose deterministic algorithms, and disable benchmark for variable size input
+    utils.set_random_seed(0)
 
     run_id = utils.get_work_dir(osp.join(cfg.test.out_path, osp.split(osp.split(cfg.test.pth)[0])[1]))
     # writer = SummaryWriter(log_dir=run_id)

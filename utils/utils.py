@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-22
+Last Modified: 2021-05-27
 	content: 
 '''
 import math
@@ -18,6 +18,7 @@ import numpy as np
 from mylib import types
 from mylib import file_utils as fu
 
+
 def get_work_dir(run_id:str):
     ''' get the full work dir (name+index) give the name '''
     all_runs = glob.glob(run_id+'*')
@@ -31,6 +32,29 @@ def get_work_dir(run_id:str):
         run_id = run_id + '_0'
     os.mkdir((run_id))
     return run_id
+
+
+def set_random_seed(seed=None):
+    ''' Set random seed for reproducity
+
+    Args:
+        seed (int): random seed, if None, using cudnn.benchmark. Default: None
+    '''
+
+    # deterministic
+    if seed:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False      
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        np.random.seed(seed)
+        random.seed(seed)
+        np.random.default_rng(seed)
+
+    # non-determininstic
+    else:
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.benchmark = True     
 
 
 def split_train_val_test(src_path, dst_path, data_format, train_ratio=0.8):

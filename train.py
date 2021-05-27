@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-25
+Last Modified: 2021-05-27
 	content: 
 '''
 ''' 
@@ -76,6 +76,8 @@ def train(cfg, writer, logger):
         split='train',
         split_root = cfg.data.split,
         augments=data_aug,
+        logger=logger,
+        ENL = cfg.data.ENL,
         )
 
     v_loader = data_loader(
@@ -83,6 +85,8 @@ def train(cfg, writer, logger):
         data_format = cfg.data.format,
         split='val',
         split_root = cfg.data.split,
+        logger=logger,
+        ENL = cfg.data.ENL,
         )
 
     train_data_len = len(t_loader)
@@ -166,6 +170,11 @@ def train(cfg, writer, logger):
 
         else:
             logger.info("No checkpoint found at '{}'".format(cfg.train.resume))
+
+
+    data_range = 255
+    if cfg.data.log:
+        data_range = np.log(data_range)
 
     # Setup Metrics
     running_metrics_val = runningScore(2)
@@ -257,8 +266,8 @@ def train(cfg, writer, logger):
                         noisy_denoised = model(noisy)
                         
                         if cfg.data.simulate:
-                            psnr = piq.psnr(clean, noisy_denoised, data_range=255)
-                            ssim = piq.ssim(clean, noisy_denoised, data_range=255)
+                            psnr = piq.psnr(clean, noisy_denoised, data_range=data_range)
+                            ssim = piq.ssim(clean, noisy_denoised, data_range=data_range)
                             val_psnr_meter.update(psnr)
                             val_ssim_meter.update(ssim)
                         
@@ -276,17 +285,6 @@ def train(cfg, writer, logger):
                     val_psnr_meter.reset()
                     val_ssim_meter.reset()
 
-                if it % (train_iter/cfg.train.epoch/10) == 0:
-                    ep = int(it / ((train_iter/cfg.train.epoch)))
-                    state = {
-                        "epoch": it,
-                        "model_state": model.state_dict(),
-                        "optimizer_state": optimizer.state_dict(),
-                        "scheduler_state": scheduler.state_dict(),
-                    }
-                    save_path = osp.join(writer.file_writer.get_logdir(), f"{ep}.pkl")
-                    torch.save(state, save_path)
-                    logger.info(f'saved model state dict at {save_path}')
 
 
                 train_val_time = time.time() - train_val_start_time
@@ -300,6 +298,19 @@ def train(cfg, writer, logger):
                 logger.info(train_time)
                 model.train()
 
+            # save model
+            if it % (train_iter/cfg.train.epoch*10) == 0:
+                ep = int(it / (train_iter/cfg.train.epoch))
+                state = {
+                    "epoch": it,
+                    "model_state": model.state_dict(),
+                    "optimizer_state": optimizer.state_dict(),
+                    "scheduler_state": scheduler.state_dict(),
+                }
+                save_path = osp.join(writer.file_writer.get_logdir(), f"{ep}.pkl")
+                torch.save(state, save_path)
+                logger.info(f'saved model state dict at {save_path}')
+
             train_start_time = time.time() 
 
 
@@ -307,15 +318,7 @@ if __name__ == "__main__":
     cfg = args.get_argparser('configs/hoekman_simulate.yml')
     
     # choose deterministic algorithms, and disable benchmark for variable size input
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False      
-    # Setup random seeds to a determinated value for reproduction
-    seed = 0
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-    np.random.default_rng(seed)
+    utils.set_random_seed(0)
     
     # generate work dir
     run_id = osp.join(r'runs', cfg.model.arch + '_' + cfg.train.loss.name + '_' + cfg.train.optimizer.name+ '_' + str(cfg.train.epoch))
