@@ -41,17 +41,21 @@ if __name__=='__main__':
                 )
 	idx = 309
 
-	img, noise, _ = ds.__getitem__(idx)
+	img, noise, file_path = ds.__getitem__(idx)
 
-	img = ds.Hoekman_recover_to_C3(img)
-	noise = ds.Hoekman_recover_to_C3(noise)
+	zz = torch.stack((img, noise), dim=0)
+	zz = ds.Hoekman_recover_to_C3(zz)
+	img = zz[0, ...]
+	noise = zz[1, ...]
+	# img = ds.Hoekman_recover_to_C3(img)
+	# noise = ds.Hoekman_recover_to_C3(noise)
 
 	pauli_img = psr.rgb_by_c3(img, type='sinclair')
 	pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
 
 	cv2.imwrite(osp.join(_TMP_PATH, 'rpauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
 	cv2.imwrite(osp.join(_TMP_PATH, 'rpauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
-
+	print(f'file path: {file_path}')
 
 
 ''' from https://github.com/TaoHuang2018/Neighbor2Neighbor/blob/main/training_script.md '''

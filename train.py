@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-27
+Last Modified: 2021-05-28
 	content: 
 '''
 ''' 
@@ -194,11 +194,8 @@ def train(cfg, writer, logger):
     train_val_start_time = time.time()
     model.train()   
     while it < train_iter:
-        for _, noisy, _ in trainloader:
+        for clean, noisy, _ in trainloader:
             it += 1   
-
-            if it==1:
-                writer.add_histogram('hist/noisy', noisy, it)
 
             noisy = noisy.to(device, dtype=torch.float32)
             mask1, mask2 = generate_mask_pair(noisy)
@@ -237,6 +234,10 @@ def train(cfg, writer, logger):
 
             if it % 1000==0:
                 writer.add_histogram('hist/pred', noisy_denoised, it)
+                writer.add_histogram('hist/noisy', noisy, it)
+
+                if cfg.data.simulate:
+                    writer.add_histogram('hist/clean', clean, it)
 
             if cfg.data.simulate:
                 pass

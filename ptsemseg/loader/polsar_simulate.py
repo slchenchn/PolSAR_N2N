@@ -146,7 +146,9 @@ class PolSARSimulate(data.Dataset):
             h = np.exp(h - self.log_compensation)
 
         # invere hoekman decomposition
-        C3 = psr.inverse_Hokeman_decomposition(h)
+        C3 = np.empty(h.shape)
+        for ii in range(h.shape[0]):
+            C3[ii, ...] = psr.inverse_Hokeman_decomposition(h[ii, ...])
 
         return C3
 

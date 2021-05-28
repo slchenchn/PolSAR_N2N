@@ -88,53 +88,56 @@ def test(cfg, logger, run_id):
     metrics = runningScore(2)
     test_psnr_meter = averageMeter()
     test_ssim_meter = averageMeter()
-
-    # test
-    model.eval()
+    psnr = []
+    ssim = []
     img_cnt = 0
     data_range = 255
     if cfg.data.log:
         data_range = np.log(data_range)
+
+    # test
+    model.eval()
     with torch.no_grad():
         for clean, noisy, files_path in loader:
              
             noisy = noisy.to(device, dtype=torch.float32)
             noisy_denoised = model(noisy)
-    
-            # metrics
+
             if cfg.data.simulate:
-                clean = clean.to(device, dtype=torch.float32)
-                psnr = piq.psnr(clean, noisy_denoised, data_range=data_range)
-                ssim = piq.ssim(clean, noisy_denoised, data_range=data_range)
-                test_psnr_meter.update(psnr)
-                test_ssim_meter.update(ssim)
+                for ii in range(cfg.test.batch_size):
+                    psnr.append(piq.psnr(noisy_denoised[ii, ...], clean[ii, ...], data_range=data_range))
+                    ssim.append(piq.ssim(noisy_denoised[ii, ...], clean[ii, ...], data_range=data_range))
 
-            if cfg.data.log:
-                noisy 
+                test_psnr_meter.update(np.array(psnr))
+                test_ssim_meter.update(np.array(ssim))
 
+            clean = data_loader.Hoekman_recover_to_C3(clean)
+            noisy_denoised = data_loader.Hoekman_recover_to_C3(noisy_denoised)
                 
             # save images
             for ii in range(cfg.test.batch_size):
+
                 file_path = files_path[ii][14:]
-                    
-                file_ori = psr.inverse_Hokeman_decomposition(noisy[ii, ...])
-                file_denoise = psr.inverse_Hokeman_decomposition(noisy_denoised[ii, ...])
+                file_ori = noisy[ii, ...]
+                file_denoise = noisy_denoised[ii, ...]
                 pauli_ori = (psr.rgb_by_c3(file_ori)*255).astype(np.uint8)
                 pauli_denoise = psr.rgb_by_c3(file_denoise).astype(np.uint8)
-                cv2.imwrite(osp.join(run_id, file_path+'-ori.png'), pauli_ori)
-                cv2.imwrite(osp.join(run_id, file_path+'-denoise.png'), pauli_denoise)
 
-        score,_ = metrics.get_scores()
-        # score_train,_ = running_metrics_train.get_scores()
-        # score_val,_ = running_metrics_val.get_scores()
-        acc = score['Acc']
-        # acc_train = score_train['Acc']
-        # acc_val = score_val['Acc']
-        logger.info(f'acc : {acc}\tOA:{acc.mean()}')
-        micro_OA = score['Overall_Acc']
-        miou = score['Mean_IoU']
-        logger.info(f'overall acc: {micro_OA}, mean iou: {miou}')
-        # logger.info(f'acc of train set: {acc_train} \nacc of val set: {acc_val}')
+                path_ori = osp.join(run_id, file_path)
+                path_denoise = osp.join(run_id, file_path)
+                if cfg.data.simulate:
+                    path_ori += '_' + str(psnr[ii]) + '_' + str(ssim[ii])
+                    path_denoise += '_' + str(psnr[ii]) + '_' + str(ssim[ii])
+                path_ori += '-ori.png'
+                path_denoise += '-denoise.png'
+
+                cv2.imwrite(path_ori, pauli_ori)
+                cv2.imwrite(path_denoise, pauli_denoise)
+
+        if cfg.data.simulate:    
+            logger.info(f'overall psnr: {test_psnr_meter.avg}, ssim: {test_ssim_meter.avg}')
+
+        logger.info(f'\ndone')
 
 
 
