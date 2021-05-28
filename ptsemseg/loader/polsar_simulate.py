@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-05-27
+Last Modified: 2021-05-28
 	content: 
 '''
 import shutil
@@ -104,10 +104,10 @@ class PolSARSimulate(data.Dataset):
         img, noise = simulate.generate_Wishart_noise_from_img(img, self.ENL)        
         
 
-        # pauli_img = psr.rgb_by_c3(img, type='sinclair')
-        # pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
-        # cv2.imwrite(osp.join(_TMP_PATH, 'pauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
-        # cv2.imwrite(osp.join(_TMP_PATH, 'pauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
+        pauli_img = psr.rgb_by_c3(img, type='sinclair')
+        pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
+        cv2.imwrite(osp.join(_TMP_PATH, 'pauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
+        cv2.imwrite(osp.join(_TMP_PATH, 'pauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
         # hoekman decomposition
@@ -124,6 +124,31 @@ class PolSARSimulate(data.Dataset):
         noise = torch.from_numpy(noise)
 
         return img, noise, self.files_path[index]
+
+    def Hoekman_recover_to_C3(self, h):
+        ''' Recover hoekman data to C3 data
+
+        Args:
+            h (Tensor): in shape of [batch, channel, height, width]
+        
+        Returns
+            C3 (ndarray): C3 matrix, in shape of [batch, channel, height, width]
+        '''
+
+        # to numpy
+        if 'cpu' != h.device:
+            h = h.cpu()
+        if isinstance(h, Tensor):
+            h = h.numpy()
+
+        # inverse log transform
+        if self.log:
+            h = np.exp(h - self.log_compensation)
+
+        # invere hoekman decomposition
+        C3 = psr.inverse_Hokeman_decomposition(h)
+
+        return C3
 
 
 if __name__=='__main__':

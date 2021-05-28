@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-25
-Last Modified: 2021-05-27
+Last Modified: 2021-05-28
 	content: 
 '''
 import cv2
@@ -17,36 +17,40 @@ _TMP_PATH = './tmp'
 if __name__=='__main__':
 
 	''' test inverse_Hoekman_decomposition '''
-	path = r'/home/csl/code/PolSAR_N2N/data/SAR_CD/GF3/data/E115_N39_中国河北/降轨/1/20161209/C3'
-	C3 = psr.read_c3(path, out='save_space')
-	hoek = psr.Hokeman_decomposition(C3)
-	C3_new = psr.inverse_Hokeman_decomposition(hoek)
-	err = ((C3-C3_new)**2)
-	print(err.min())
-	print(err.max())
-	print(err.mean())
-	print(C3.dtype, C3.shape)
+	# path = r'/home/csl/code/PolSAR_N2N/data/SAR_CD/GF3/data/E115_N39_中国河北/降轨/1/20161209/C3'
+	# C3 = psr.read_c3(path, out='save_space')
+	# hoek = psr.Hokeman_decomposition(C3)
+	# C3_new = psr.inverse_Hokeman_decomposition(hoek)
+	# err = ((C3-C3_new)**2)
+	# print(err.min())
+	# print(err.max())
+	# print(err.mean())
+	# print(C3.dtype, C3.shape)
 
 
 	''' test dataloader '''
-	# aug = Compose([RandomHorizontalFlip(0.5), RandomVerticalFlip(0.5)])
-	# ds = PolSARSimulate(file_root=r'data/BSR/BSDS500/data/images', 
-    #             split_root=r'data/GF3/split/denoise/Hoekman/0.9', 
-    #             split='train', 
-    #             augments=aug,
-    #             data_format='Hoekman',
-    #             norm=False,
-	# 			ENL=100,
-    #             )
-	# idx = 3
+	aug = Compose([RandomHorizontalFlip(0.5), RandomVerticalFlip(0.5)])
+	ds = PolSARSimulate(file_root=r'data/BSR/BSDS500/data/images', 
+                split_root=r'data/GF3/split/denoise/Hoekman/0.9', 
+                split='train', 
+                augments=aug,
+                data_format='Hoekman',
+                norm=False,
+				ENL=1,
+				log = False,
+                )
+	idx = 309
 
-	# img, noise = ds.__getitem__(idx)
+	img, noise, _ = ds.__getitem__(idx)
 
-	# pauli_img = psr.rgb_by_c3(img, type='sinclair')
-	# pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
+	img = ds.Hoekman_recover_to_C3(img)
+	noise = ds.Hoekman_recover_to_C3(noise)
 
-	# cv2.imwrite(osp.join(_TMP_PATH, 'pauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
-	# cv2.imwrite(osp.join(_TMP_PATH, 'pauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
+	pauli_img = psr.rgb_by_c3(img, type='sinclair')
+	pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
+
+	cv2.imwrite(osp.join(_TMP_PATH, 'rpauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
+	cv2.imwrite(osp.join(_TMP_PATH, 'rpauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
 

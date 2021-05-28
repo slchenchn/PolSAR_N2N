@@ -77,6 +77,7 @@ def train(cfg, writer, logger):
         split_root = cfg.data.split,
         augments=data_aug,
         logger=logger,
+        log = cfg.data.log,
         ENL = cfg.data.ENL,
         )
 
@@ -84,6 +85,7 @@ def train(cfg, writer, logger):
         data_path,
         data_format = cfg.data.format,
         split='val',
+        log = cfg.data.log,
         split_root = cfg.data.split,
         logger=logger,
         ENL = cfg.data.ENL,
@@ -192,7 +194,7 @@ def train(cfg, writer, logger):
     train_val_start_time = time.time()
     model.train()   
     while it < train_iter:
-        for _, noisy in trainloader:
+        for _, noisy, _ in trainloader:
             it += 1   
 
             if it==1:
@@ -261,7 +263,7 @@ def train(cfg, writer, logger):
                 val_start_time = time.time()
                 model.eval()            
                 with torch.no_grad():   
-                    for clean, noisy in valloader:      
+                    for clean, noisy, _ in valloader:      
                         noisy = noisy.to(device, dtype=torch.float32)
                         noisy_denoised = model(noisy)
                         

@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-27
+Last Modified: 2021-05-28
 '''
 import os.path as osp
 import matplotlib.pyplot as plt
@@ -46,6 +46,7 @@ def test(cfg, logger, run_id):
         norm = cfg.data.norm,
         split=cfg.test.dataset,
         split_root = cfg.data.split,
+        log = cfg.data.log,
         augments=data_aug,
         logger=logger,
         ENL = cfg.data.ENL,
@@ -108,9 +109,14 @@ def test(cfg, logger, run_id):
                 test_psnr_meter.update(psnr)
                 test_ssim_meter.update(ssim)
 
+            if cfg.data.log:
+                noisy 
+
+                
             # save images
             for ii in range(cfg.test.batch_size):
                 file_path = files_path[ii][14:]
+                    
                 file_ori = psr.inverse_Hokeman_decomposition(noisy[ii, ...])
                 file_denoise = psr.inverse_Hokeman_decomposition(noisy_denoised[ii, ...])
                 pauli_ori = (psr.rgb_by_c3(file_ori)*255).astype(np.uint8)

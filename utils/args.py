@@ -1,13 +1,23 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-24
-Last Modified: 2021-05-25
+Last Modified: 2021-05-27
 	content: 
 '''
 from mylib import nestargs
 import yaml
 from mylib import types
+import argparse
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def get_argparser(config_file=None)->nestargs.NestedArgumentParser:
     ''' get a nested argument parser '''
@@ -91,6 +101,13 @@ def get_argparser(config_file=None)->nestargs.NestedArgumentParser:
     # default='0.01,2.0',
     help="equivalent number of looks"
     )
+    parser.add_argument(
+    "--data.log",
+    nargs='?',
+    type=str2bool,
+    # default='0.01,2.0',
+    help="whether to log transform the data"
+    )
 
 
     args = parser.parse_args()
@@ -121,8 +138,9 @@ def transfer_attributes(slave, master):
         if isinstance(v, nestargs.NestedNamespace):
             nxt_slave = getattr(slave, k)
             nxt_master = getattr(master, k)
-            transfer_attributes(nxt_slave, nxt_master)
-        elif v:
+            setattr(master, k, transfer_attributes(nxt_slave, nxt_master))
+            # transfer_attributes(nxt_slave, nxt_master)
+        elif v is not None:
             setattr(master, k, v)
     return master
 
