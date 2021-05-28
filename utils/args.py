@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-24
-Last Modified: 2021-05-27
+Last Modified: 2021-05-28
 	content: 
 '''
 from mylib import nestargs
@@ -93,6 +93,13 @@ def get_argparser(config_file=None)->nestargs.NestedArgumentParser:
     type=float,
     # default='0.01,2.0',
     help="learning rate"
+    )
+    parser.add_argument(
+    "--train.optimizer.weight_decay",
+    nargs='?',
+    type=float,
+    # default='0.01,2.0',
+    help="weight_decay"
     )
     parser.add_argument(
     "--data.ENL",

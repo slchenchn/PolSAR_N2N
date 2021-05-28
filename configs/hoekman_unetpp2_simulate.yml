@@ -1,0 +1,52 @@
+model:
+    arch: unetpp2
+    in_channels: 9
+    zero_output_weights: False
+data:
+    dataloader: PolSAR_simulate
+    split: data/SAR_CD/GF3/split/denoise/Hoekman/0.9
+    format: Hoekman
+    path: data/BSR/BSDS500/data/images
+    # mirror: True 
+    norm: False
+    log: True
+    ENL: 1
+    simulate: True
+train:
+    gpu: [0]
+    augment: 
+        'hflip': 0.5
+        'vflip': 0.5
+        # 'rotate': 180
+    epoch: 50
+    batch_size: 4
+    val_interval: 30
+    n_workers: 4
+    print_interval: 10
+    optimizer:
+        name: 'adam'    
+        # name: 'sgd'
+        lr: 1.0e-6
+        # lr: 5.0e-4
+        weight_decay: 1.0e-5
+        # momentum: 0.9
+
+    loss:
+        name: 'N2N_loss'
+        gamma: 
+            base: 0
+            const: True
+        # reduction: 'mean'
+    lr: 
+        name: 'constant_lr'
+        # name: 'poly_lr_chen'
+        # max_iter: 2000
+    resume: 
+test:
+    out_path: 'result'
+    pth: 'runs/unetpp_N2N_loss_adam_50_6/50.pkl'
+    gpu: [0]
+    augments:
+    batch_size: 16
+    n_workers: 12
+    dataset: 'test'

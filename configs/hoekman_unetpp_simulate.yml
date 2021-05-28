@@ -28,7 +28,7 @@ train:
         # name: 'sgd'
         lr: 1.0e-6
         # lr: 5.0e-4
-        # weight_decay: 1.0e-5
+        weight_decay: 1.0e-5
         # momentum: 0.9
 
     loss:
@@ -44,9 +44,9 @@ train:
     resume: 
 test:
     out_path: 'result'
-    pth: 'runs/csiam-diffv2_cross_entropy_mask_adam_constant_lr_0/csiam-diffv2_PolSAR_CD_base_best_model.pkl'
+    pth: 'runs/unetpp_N2N_loss_adam_50_7/50.pkl'
     gpu: [0]
     augments:
     batch_size: 16
-    n_workers: 16
+    n_workers: 12
     dataset: 'test'

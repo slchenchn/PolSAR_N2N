@@ -1,8 +1,10 @@
 '''
 Author: Shuailin Chen
-Created Date: 2020-11-27
+Created Date: 2021-05-28
 Last Modified: 2021-05-28
+	content: supplement code for further test
 '''
+
 import os.path as osp
 import matplotlib.pyplot as plt
 import shutil
@@ -52,7 +54,7 @@ def test(cfg, logger, run_id):
         ENL = cfg.data.ENL,
         )
     run_id = osp.join(run_id, cfg.test.dataset)
-    os.mkdir(run_id)
+    # os.mkdir(run_id)
     
     logger.info("data path: {}".format(data_path))
     logger.info(f'num of {cfg.test.dataset} set samples: {len(data_loader)}')
@@ -106,45 +108,14 @@ def test(cfg, logger, run_id):
             ssim = []
             if cfg.data.simulate:
                 clean = clean.to(device, dtype=torch.float32)
-                for ii in range(clean.shape[0]):
-                    psnr.append(piq.psnr(noisy_denoised[ii, ...], clean[ii, ...], data_range=data_range).cpu())
-                    ssim.append(piq.ssim(noisy_denoised[ii, ...], clean[ii, ...], data_range=data_range).cpu())
+                for ii in range(9):
+                    psnr.append(piq.psnr(noisy_denoised[:, ii, :, :], clean[:, ii, :, :], data_range=data_range).cpu())
+                    ssim.append(piq.ssim(noisy_denoised[:, ii, :, :], clean[:, ii, :, :], data_range=data_range).cpu())
+                    print(f'{ii}: PSNR: {psnr[ii]}\n\tSSIM: {ssim[ii]}')
 
+                print('\n')
                 test_psnr_meter.update(np.array(psnr).mean(), n=clean.shape[0])
                 test_ssim_meter.update(np.array(ssim).mean(), n=clean.shape[0])
-
-            noisy = data_loader.Hoekman_recover_to_C3(noisy)
-            clean = data_loader.Hoekman_recover_to_C3(clean)
-            noisy_denoised = data_loader.Hoekman_recover_to_C3(noisy_denoised)
-                
-            # save images
-            for ii in range(clean.shape[0]):
-
-                file_path = files_path[ii][29:]
-                file_path = file_path.replace(r'/', '_')
-                file_ori = noisy[ii, ...]
-                file_clean = clean[ii, ...]
-                file_denoise = noisy_denoised[ii, ...]
-                pauli_ori = (psr.rgb_by_c3(file_ori, 'sinclair')*255).astype(np.uint8)
-                pauli_denoise = (psr.rgb_by_c3(file_denoise, 'sinclair')*255).astype(np.uint8)
-                pauli_clean = (psr.rgb_by_c3(file_clean, 'sinclair')*255).astype(np.uint8)
-
-                path_ori = osp.join(run_id, file_path)
-                path_denoise = osp.join(run_id, file_path)
-                path_clean = osp.join(run_id, file_path)
-                if cfg.data.simulate:
-                    metric_str = f'_{psnr[ii].item():.3f}_{ssim[ii].item():.3f}'
-                    path_ori += metric_str
-                    path_denoise += metric_str
-                    path_clean += metric_str
-
-                path_ori += '-ori.png'
-                path_denoise += '-denoise.png'
-                path_clean += '-clean.png'
-
-                cv2.imwrite(path_ori, pauli_ori)
-                cv2.imwrite(path_denoise, pauli_denoise)
-                cv2.imwrite(path_clean, pauli_clean)
 
         if cfg.data.simulate:    
             logger.info(f'overall psnr: {test_psnr_meter.avg}, ssim: {test_ssim_meter.avg}')

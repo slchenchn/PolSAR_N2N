@@ -1,0 +1,52 @@
+model:
+    arch: unetpp
+    in_channels: 9
+    zero_output_weights: False
+data:
+    dataloader: PolSAR
+    split: data/GF3/split/denoise/Hoekman/0.9
+    format: Hoekman
+    path: data/GF3
+    # mirror: True 
+    norm: False
+    log: True
+    ENL: 1
+    simulate: False
+train:
+    gpu: [0]
+    augment: 
+        'hflip': 0.5
+        'vflip': 0.5
+        # 'rotate': 180
+    epoch: 50
+    batch_size: 16
+    val_interval: 30
+    n_workers: 16
+    print_interval: 10
+    optimizer:
+        name: 'adam'    
+        # name: 'sgd'
+        lr: 1.0e-4
+        # lr: 5.0e-4
+        # weight_decay: 1.0e-5
+        # momentum: 0.9
+
+    loss:
+        name: 'N2N_loss'
+        gamma: 
+            base: 0
+            const: True
+        # reduction: 'mean'
+    lr: 
+        name: 'constant_lr'
+        # name: 'poly_lr_chen'
+        # max_iter: 2000
+    resume: 
+test:
+    out_path: 'result'
+    pth: 'runs/csiam-diffv2_cross_entropy_mask_adam_constant_lr_0/csiam-diffv2_PolSAR_CD_base_best_model.pkl'
+    gpu: [0]
+    augments:
+    batch_size: 16
+    n_workers: 16
+    dataset: 'test'

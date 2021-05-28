@@ -319,7 +319,7 @@ def train(cfg, writer, logger):
 
 
 if __name__ == "__main__":
-    cfg = args.get_argparser('configs/hoekman_simulate.yml')
+    cfg = args.get_argparser('configs/hoekman_unetpp_simulate.yml')
     
     # choose deterministic algorithms, and disable benchmark for variable size input
     utils.set_random_seed(0)

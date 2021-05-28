@@ -1,13 +1,14 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-21
+Last Modified: 2021-05-28
 	content: 
 '''
 import copy
 import torchvision.models as models
 
 from ptsemseg.models.unetpp import UnetPP
+from ptsemseg.models.unetpp2 import UnetPP2
 
 def get_model(model_dict):
     model_dict = model_dict.to_flatten_dict()
@@ -25,6 +26,7 @@ def _get_model_instance(name):
     try:
         return {
             "unetpp": UnetPP,
+            "unetpp2": UnetPP2,
         }[name]
     except:
         raise("Model {} not available".format(name))
