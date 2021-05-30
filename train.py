@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-28
+Last Modified: 2021-05-30
 	content: 
 '''
 ''' 
@@ -43,7 +43,8 @@ from ptsemseg.metrics import runningScore, averageMeter
 from ptsemseg.augmentations import get_composed_augmentations
 from ptsemseg.schedulers import get_scheduler
 from ptsemseg.optimizers import get_optimizer
-from ptsemseg.loader.rand_pool import generate_mask_pair, generate_subimages
+from ptsemseg.loader import rand_pool
+
 
 from mylib import nestargs
 from mylib import types
@@ -198,15 +199,16 @@ def train(cfg, writer, logger):
             it += 1   
 
             noisy = noisy.to(device, dtype=torch.float32)
-            mask1, mask2 = generate_mask_pair(noisy)
-            noisy_sub1 = generate_subimages(noisy, mask1)
-            noisy_sub2 = generate_subimages(noisy, mask2)
+            mask1, mask2 = rand_pool.generate_mask_pair(noisy)
+            noisy_sub1 = rand_pool.generate_subimages(noisy, mask1)
+            noisy_sub2 = rand_pool.generate_subimages(noisy, mask2)
 
             # preparing for the regularization term
             with torch.no_grad():
                 noisy_denoised = model(noisy)
-            noisy_sub1_denoised = generate_subimages(noisy_denoised, mask1)
-            noisy_sub2_denoised = generate_subimages(noisy_denoised, mask2)
+            noisy_sub1_denoised = rand_pool.generate_subimages(noisy_denoised, mask1)
+            noisy_sub2_denoised = rand_pool.generate_subimages(noisy_denoised, mask2)
+            # print(rand_pool.operation_seed_counter)
 
             # calculating the loss 
             noisy_output = model(noisy_sub1)
