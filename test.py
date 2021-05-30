@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-28
+Last Modified: 2021-05-30
 '''
 import os.path as osp
 import matplotlib.pyplot as plt
@@ -125,9 +125,9 @@ def test(cfg, logger, run_id):
                 file_ori = noisy[ii, ...]
                 file_clean = clean[ii, ...]
                 file_denoise = noisy_denoised[ii, ...]
-                pauli_ori = (psr.rgb_by_c3(file_ori, 'sinclair')*255).astype(np.uint8)
-                pauli_denoise = (psr.rgb_by_c3(file_denoise, 'sinclair')*255).astype(np.uint8)
-                pauli_clean = (psr.rgb_by_c3(file_clean, 'sinclair')*255).astype(np.uint8)
+                pauli_ori = (psr.rgb_by_c3(file_ori, 'sinclair', is_print=True)*255).astype(np.uint8)
+                pauli_denoise = (psr.rgb_by_c3(file_denoise, 'sinclair', is_print=True)*255).astype(np.uint8)
+                pauli_clean = (psr.rgb_by_c3(file_clean, 'sinclair', is_print=True)*255).astype(np.uint8)
 
                 path_ori = osp.join(run_id, file_path)
                 path_denoise = osp.join(run_id, file_path)
