@@ -6,3 +6,4 @@ tmp/*
 .ipynb_checkpoints
 ptsemseg/models/imagenet
 ptsemseg/models/EffNet
+*.pyc
