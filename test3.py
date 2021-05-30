@@ -26,6 +26,7 @@ from ptsemseg.models import get_model
 from utils import args
 from utils import utils
 from mylib import types
+from mylib import file_utils as fu
 
 
 __TMP_DIR = r'./tmp'
@@ -113,24 +114,19 @@ def test(cfg, logger, run_id):
                 test_psnr_meter.update(np.array(psnr).mean(), n=clean.shape[0])
                 test_ssim_meter.update(np.array(ssim).mean(), n=clean.shape[0])
 
-            noisy = data_loader.Hoekman_recover_to_C3(noisy)
-            clean = data_loader.Hoekman_recover_to_C3(clean)
-            noisy_denoised = data_loader.Hoekman_recover_to_C3(noisy_denoised)
-                
+            clean = clean.cpu().numpy()
+            noisy = noisy.cpu().numpy()
+            noisy_denoised = noisy_denoised.cpu().numpy()
+
             # save images
             for ii in range(clean.shape[0]):
 
                 file_path = files_path[ii][29:]
                 file_path = file_path.replace(r'/', '_')
+                file_path = osp.splitext(file_path)[0]
                 file_ori = noisy[ii, ...]
                 file_clean = clean[ii, ...]
                 file_denoise = noisy_denoised[ii, ...]
-                print('clean')
-                pauli_clean = (psr.rgb_by_c3(file_clean, 'sinclair', is_print=True)*255).astype(np.uint8)
-                print('noisy')
-                pauli_ori = (psr.rgb_by_c3(file_ori, 'sinclair', is_print=True)*255).astype(np.uint8)
-                print('denoise')
-                pauli_denoise = (psr.rgb_by_c3(file_denoise, 'sinclair', is_print=True)*255).astype(np.uint8)
 
                 path_ori = osp.join(run_id, file_path)
                 path_denoise = osp.join(run_id, file_path)
@@ -141,13 +137,20 @@ def test(cfg, logger, run_id):
                     path_denoise += metric_str
                     path_clean += metric_str
 
-                path_ori += '-ori.png'
-                path_denoise += '-denoise.png'
-                path_clean += '-clean.png'
+                path_ori = osp.join(path_ori, 'original')
+                path_denoise = osp.join(path_denoise, 'denoise')
+                path_clean = osp.join(path_clean, 'clean')
 
-                cv2.imwrite(path_ori, pauli_ori)
-                cv2.imwrite(path_denoise, pauli_denoise)
-                cv2.imwrite(path_clean, pauli_clean)
+                fu.mkdir_if_not_exist(path_ori)
+                fu.mkdir_if_not_exist(path_denoise)
+                fu.mkdir_if_not_exist(path_clean)
+
+                print('clean')
+                psr.write_hoekman_image(file_clean, path_clean, is_print=True)
+                print('noisy')
+                psr.write_hoekman_image(file_ori, path_ori, is_print=True)
+                print('denoise')
+                psr.write_hoekman_image(file_denoise, path_denoise, is_print=True)
 
         if cfg.data.simulate:    
             logger.info(f'overall psnr: {test_psnr_meter.avg}, ssim: {test_ssim_meter.avg}')
