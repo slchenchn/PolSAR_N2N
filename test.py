@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-30
+Last Modified: 2021-05-31
 '''
 import os.path as osp
 import matplotlib.pyplot as plt
@@ -157,7 +157,7 @@ def test(cfg, logger, run_id):
 
 
 if __name__=='__main__':
-    cfg = args.get_argparser('configs/hoekman_unetpp_simulate.yml')
+    cfg = args.get_argparser('configs/hoekman_unetpp2_simulate.yml')
 
     # choose deterministic algorithms, and disable benchmark for variable size input
     utils.set_random_seed(0)

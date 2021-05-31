@@ -26,7 +26,7 @@ train:
     optimizer:
         name: 'adam'    
         # name: 'sgd'
-        lr: 1.0e-6
+        lr: 1.0e-5
         # lr: 5.0e-4
         weight_decay: 1.0e-5
         # momentum: 0.9
@@ -38,15 +38,17 @@ train:
             const: True
         # reduction: 'mean'
     lr: 
-        name: 'constant_lr'
+        name: 'multi_step'
+        gamma: 0.5
+        milestones: [10, 20, 30, 40, 50]
         # name: 'poly_lr_chen'
         # max_iter: 2000
     resume: 
 test:
     out_path: 'result'
-    pth: 'runs/unetpp_N2N_loss_adam_150_0/150.pkl'
+    pth: 'runs/unetpp_N2N_loss_adam_50_8/50.pkl'
     gpu: [0]
     augments:
-    batch_size: 16
-    n_workers: 12
+    batch_size: 1
+    n_workers: 1
     dataset: 'test'
