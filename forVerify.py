@@ -18,9 +18,17 @@ _TMP_PATH = './tmp'
 if __name__=='__main__':
 
 	''' test generate_Wishart_noise_from_img() '''
-	R = 50
-	a = R * np.ones((1000, 1000))
-	ENL = 10
+	R = 15
+	a = R * np.ones((100, 100, 3))
+	ENL = 3
+	img, noise = simulate.generate_Wishart_noise_from_img(a, ENL)
+
+	# noise = psr.Hokeman_decomposition(noise)
+	noise = np.real(noise[0, ...])
+	noise = np.log(noise)
+
+	print(np.log(R), noise.mean(), R**2/ENL, noise.var())
+
 
 
 	''' test inverse_Hoekman_decomposition '''
