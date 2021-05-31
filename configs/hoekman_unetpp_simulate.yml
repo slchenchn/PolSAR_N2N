@@ -44,7 +44,7 @@ train:
     resume: 
 test:
     out_path: 'result'
-    pth: 'runs/unetpp_N2N_loss_adam_50_10/30.pkl'
+    pth: 'runs/unetpp_N2N_loss_adam_50_12/50.pkl'
     gpu: [0]
     augments:
     batch_size: 16

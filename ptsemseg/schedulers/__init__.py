@@ -1,4 +1,11 @@
+'''
+Author: Shuailin Chen
+Created Date: 2021-04-24
+Last Modified: 2021-05-31
+	content: 
+'''
 import logging 
+from torch.optim import lr_scheduler
 from ptsemseg.schedulers.schedulers import *
 
 logger = logging.getLogger('ptsemseg')
@@ -7,6 +14,7 @@ key2scheduler = {'constant_lr': ConstantLR,
                  'poly_lr': PolynomialLR,
                  'poly_lr_chen': PolynomialLR_chen,
                  'multi_step': MultiStepLR,
+                 'step': lr_scheduler.StepLR,
                  'cosine_annealing': CosineAnnealingLR,
                  'exp_lr': ExponentialLR}
 

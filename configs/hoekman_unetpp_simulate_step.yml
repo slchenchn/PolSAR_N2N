@@ -38,9 +38,9 @@ train:
             const: True
         # reduction: 'mean'
     lr: 
-        name: 'multi_step'
+        name: 'step'
         gamma: 0.5
-        milestones: [10, 20, 30, 40, 50]
+        step_size : 1250
         # name: 'poly_lr_chen'
         # max_iter: 2000
     resume: 
