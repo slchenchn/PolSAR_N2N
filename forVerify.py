@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-25
-Last Modified: 2021-05-28
+Last Modified: 2021-05-31
 	content: 
 '''
 import cv2
@@ -10,11 +10,18 @@ from ptsemseg.augmentations.augmentations import *
 from ptsemseg.loader.polsar_simulate import *
 import torch
 from ptsemseg.loader import rand_pool
+from mylib import simulate
 
 _TMP_PATH = './tmp'
 
 
 if __name__=='__main__':
+
+	''' test generate_Wishart_noise_from_img() '''
+	R = 50
+	a = R * np.ones((1000, 1000))
+	ENL = 10
+
 
 	''' test inverse_Hoekman_decomposition '''
 	# path = r'/home/csl/code/PolSAR_N2N/data/SAR_CD/GF3/data/E115_N39_中国河北/降轨/1/20161209/C3'
@@ -29,33 +36,33 @@ if __name__=='__main__':
 
 
 	''' test dataloader '''
-	aug = Compose([RandomHorizontalFlip(0.5), RandomVerticalFlip(0.5)])
-	ds = PolSARSimulate(file_root=r'data/BSR/BSDS500/data/images', 
-                split_root=r'data/GF3/split/denoise/Hoekman/0.9', 
-                split='train', 
-                augments=aug,
-                data_format='Hoekman',
-                norm=False,
-				ENL=1,
-				log = False,
-                )
-	idx = 309
+	# aug = Compose([RandomHorizontalFlip(0.5), RandomVerticalFlip(0.5)])
+	# ds = PolSARSimulate(file_root=r'data/BSR/BSDS500/data/images', 
+    #             split_root=r'data/GF3/split/denoise/Hoekman/0.9', 
+    #             split='train', 
+    #             augments=aug,
+    #             data_format='Hoekman',
+    #             norm=False,
+	# 			ENL=1,
+	# 			log = False,
+    #             )
+	# idx = 309
 
-	img, noise, file_path = ds.__getitem__(idx)
+	# img, noise, file_path = ds.__getitem__(idx)
 
-	zz = torch.stack((img, noise), dim=0)
-	zz = ds.Hoekman_recover_to_C3(zz)
-	img = zz[0, ...]
-	noise = zz[1, ...]
-	# img = ds.Hoekman_recover_to_C3(img)
-	# noise = ds.Hoekman_recover_to_C3(noise)
+	# zz = torch.stack((img, noise), dim=0)
+	# zz = ds.Hoekman_recover_to_C3(zz)
+	# img = zz[0, ...]
+	# noise = zz[1, ...]
+	# # img = ds.Hoekman_recover_to_C3(img)
+	# # noise = ds.Hoekman_recover_to_C3(noise)
 
-	pauli_img = psr.rgb_by_c3(img, type='sinclair')
-	pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
+	# pauli_img = psr.rgb_by_c3(img, type='sinclair')
+	# pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
 
-	cv2.imwrite(osp.join(_TMP_PATH, 'rpauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
-	cv2.imwrite(osp.join(_TMP_PATH, 'rpauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
-	print(f'file path: {file_path}')
+	# cv2.imwrite(osp.join(_TMP_PATH, 'rpauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
+	# cv2.imwrite(osp.join(_TMP_PATH, 'rpauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
+	# print(f'file path: {file_path}')
 
 
 ''' from https://github.com/TaoHuang2018/Neighbor2Neighbor/blob/main/training_script.md '''

@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-05-28
+Last Modified: 2021-05-31
 	content: 
 '''
 import shutil
@@ -104,10 +104,10 @@ class PolSARSimulate(data.Dataset):
         img, noise = simulate.generate_Wishart_noise_from_img(img, self.ENL)        
         
 
-        pauli_img = psr.rgb_by_c3(img, type='sinclair')
-        pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
-        cv2.imwrite(osp.join(_TMP_PATH, 'pauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
-        cv2.imwrite(osp.join(_TMP_PATH, 'pauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
+        # pauli_img = psr.rgb_by_c3(img, type='sinclair')
+        # pauli_noise = psr.rgb_by_c3(noise, type='sinclair')
+        # cv2.imwrite(osp.join(_TMP_PATH, 'pauli_img.jpg'), cv2.cvtColor((255*pauli_img).astype(np.uint8), cv2.COLOR_RGB2BGR))
+        # cv2.imwrite(osp.join(_TMP_PATH, 'pauli_noise.jpg'), cv2.cvtColor((255*pauli_noise).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
         # hoekman decomposition
