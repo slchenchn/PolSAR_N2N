@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-25
-Last Modified: 2021-05-31
+Last Modified: 2021-06-01
 	content: 
 '''
 import cv2
@@ -19,8 +19,8 @@ if __name__=='__main__':
 
 	''' test generate_Wishart_noise_from_img() '''
 	R = 15
-	a = R * np.ones((100, 100, 3))
-	ENL = 3
+	a = R * np.ones((10, 10, 3))
+	ENL = 300
 	img, noise = simulate.generate_Wishart_noise_from_img(a, ENL)
 
 	# noise = psr.Hokeman_decomposition(noise)

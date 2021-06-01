@@ -9,7 +9,7 @@ data:
     path: data/BSR/BSDS500/data/images
     # mirror: True 
     norm: False
-    log: False
+    log: True
     ENL: 10
     simulate: True
 train:
@@ -44,7 +44,7 @@ train:
     resume: 
 test:
     out_path: 'result'
-    pth: 'runs/unetpp_N2N_loss_adam_50_12/50.pkl'
+    pth: 'runs/unetpp_N2N_loss_adam_50_13/50.pkl'
     gpu: [0]
     augments:
     batch_size: 16
