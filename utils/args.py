@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-24
-Last Modified: 2021-05-28
+Last Modified: 2021-06-01
 	content: 
 '''
 from mylib import nestargs
@@ -114,6 +114,20 @@ def get_argparser(config_file=None)->nestargs.NestedArgumentParser:
     type=str2bool,
     # default='0.01,2.0',
     help="whether to log transform the data"
+    )
+    parser.add_argument(
+    "--train.lr.step_size",
+    nargs='?',
+    type=int,
+    # default='0.01,2.0',
+    help="lr step size"
+    )
+    parser.add_argument(
+    "--train.lr.gamma",
+    nargs='?',
+    type=float,
+    # default='0.01,2.0',
+    help="lr gamma"
     )
 
 
