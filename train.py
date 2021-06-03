@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-06-01
+Last Modified: 2021-06-02
 	content: 
 '''
 ''' 
@@ -179,6 +179,7 @@ def train(cfg, writer, logger):
     data_range = 255
     if cfg.data.log:
         data_range = np.log(data_range)
+    data_range /= 350
 
     # Setup Metrics
     running_metrics_val = runningScore(2)
@@ -199,6 +200,7 @@ def train(cfg, writer, logger):
             it += 1   
 
             noisy = noisy.to(device, dtype=torch.float32)
+            noisy /= 350
             mask1, mask2 = rand_pool.generate_mask_pair(noisy)
             noisy_sub1 = rand_pool.generate_subimages(noisy, mask1)
             noisy_sub2 = rand_pool.generate_subimages(noisy, mask2)
@@ -209,6 +211,10 @@ def train(cfg, writer, logger):
             noisy_sub1_denoised = rand_pool.generate_subimages(noisy_denoised, mask1)
             noisy_sub2_denoised = rand_pool.generate_subimages(noisy_denoised, mask2)
             # print(rand_pool.operation_seed_counter)
+
+            # for ii, param in enumerate(model.parameters()):
+            #     if torch.sum(torch.isnan(param.data)):
+            #         print(f'{ii}: nan parameters')
 
             # calculating the loss 
             noisy_output = model(noisy_sub1)
@@ -321,7 +327,7 @@ def train(cfg, writer, logger):
 
 
 if __name__ == "__main__":
-    cfg = args.get_argparser('configs/hoekman_unetpp_simulate_step.yml')
+    cfg = args.get_argparser('configs/hoekman_unetpp_simulate_step_sgd.yml')
     
     # choose deterministic algorithms, and disable benchmark for variable size input
     utils.set_random_seed(0)

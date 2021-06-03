@@ -9,7 +9,7 @@ data:
     path: data/BSR/BSDS500/data/images
     # mirror: True 
     norm: False
-    log: True
+    log: False
     ENL: 10
     simulate: True
 train:
@@ -18,15 +18,14 @@ train:
         'hflip': 0.5
         'vflip': 0.5
         # 'rotate': 180
-    epoch: 50
+    epoch: 30
     batch_size: 4
-    val_interval: 300
+    val_interval: 600
     n_workers: 4
     print_interval: 10
     optimizer:
-        name: 'adam'    
-        # name: 'sgd'
-        lr: 1.0e-6
+        name: 'sgd'    
+        lr: 1.0e-8
         # lr: 5.0e-4
         weight_decay: 1.0e-5
         # momentum: 0.9
@@ -38,15 +37,17 @@ train:
             const: True
         # reduction: 'mean'
     lr: 
-        name: 'constant_lr'
+        name: 'step'
+        gamma: 0.1
+        step_size : 1250
         # name: 'poly_lr_chen'
         # max_iter: 2000
     resume: 
 test:
     out_path: 'result'
-    pth: 'runs/unetpp_N2N_loss_adam_50_13/50.pkl'
+    pth: 'runs/unetpp_N2N_loss_sgd_30_0/30.pkl'
     gpu: [0]
     augments:
     batch_size: 16
-    n_workers: 12
+    n_workers: 1
     dataset: 'test'

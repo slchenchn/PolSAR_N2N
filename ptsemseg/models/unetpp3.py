@@ -5,6 +5,7 @@ Last Modified: 2021-06-02
 	content: PyTorch implementation of U-Net model for N2N and SSDN.
     adapted from https://github.com/COMP6248-Reproducability-Challenge/selfsupervised-denoising/blob/master-with-report/ssdn/ssdn/models/noise_network.py, 
     note: this network is partially asymmetric
+    Add group normalization
 '''
 
 
@@ -14,7 +15,7 @@ import torch.nn as nn
 from torch import Tensor
 
 
-class UnetPP2(nn.Module):
+class UnetPP3(nn.Module):
     """Custom U-Net architecture for Self Supervised Denoising (SSDN) and Noise2Noise (N2N).
     Base N2N implementation was made with reference to @joeylitalien's N2N implementation.
     Changes made are removal of weight sharing when blocks are reused. Usage of LeakyReLu over standard ReLu and incorporation of blindspot  unctionality.
@@ -49,10 +50,10 @@ class UnetPP2(nn.Module):
         # Layers: enc_conv0, enc_conv1, pool1
         self.encode_block_1 = nn.Sequential(
             self.Conv2d(in_channels, 48, 3, stride=1, padding=1),
-            nn.BatchNorm2d(48),
+            nn.GroupNorm(3, 48),
             nn.LeakyReLU(negative_slope=0.1, inplace=True),
             self.Conv2d(48, 48, 3, padding=1),
-            nn.BatchNorm2d(48),
+            nn.GroupNorm(3, 48),
             nn.LeakyReLU(negative_slope=0.1, inplace=True),
             _max_pool_block(nn.MaxPool2d(2)),
         )
@@ -61,7 +62,7 @@ class UnetPP2(nn.Module):
         def _encode_block_2_3_4_5() -> nn.Module:
             return nn.Sequential(
                 self.Conv2d(48, 48, 3, stride=1, padding=1),
-                nn.BatchNorm2d(48),
+                nn.GroupNorm(3, 48),
                 nn.LeakyReLU(negative_slope=0.1, inplace=True),
                 _max_pool_block(nn.MaxPool2d(2)),
             )
@@ -75,7 +76,7 @@ class UnetPP2(nn.Module):
         # Layers: enc_conv6
         self.encode_block_6 = nn.Sequential(
             self.Conv2d(48, 48, 3, stride=1, padding=1),
-            nn.BatchNorm2d(48),
+            nn.GroupNorm(3, 48),
             nn.LeakyReLU(negative_slope=0.1, inplace=True),
         )
 
@@ -88,10 +89,10 @@ class UnetPP2(nn.Module):
         # Layers: dec_conv5a, dec_conv5b, upsample4
         self.decode_block_5 = nn.Sequential(
             self.Conv2d(96, 96, 3, stride=1, padding=1),
-            nn.BatchNorm2d(96),
+            nn.GroupNorm(3, 96),
             nn.LeakyReLU(negative_slope=0.1, inplace=True),
             self.Conv2d(96, 96, 3, stride=1, padding=1),
-            nn.BatchNorm2d(96),
+            nn.GroupNorm(3, 96),
             nn.LeakyReLU(negative_slope=0.1, inplace=True),
             nn.Upsample(scale_factor=2, mode="nearest"),
         )
@@ -100,10 +101,10 @@ class UnetPP2(nn.Module):
         def _decode_block_4_3_2() -> nn.Module:
             return nn.Sequential(
                 self.Conv2d(144, 96, 3, stride=1, padding=1),
-                nn.BatchNorm2d(96),
+                nn.GroupNorm(3, 96),
                 nn.LeakyReLU(negative_slope=0.1, inplace=True),
                 self.Conv2d(96, 96, 3, stride=1, padding=1),
-                nn.BatchNorm2d(96),
+                nn.GroupNorm(3, 96),
                 nn.LeakyReLU(negative_slope=0.1, inplace=True),
                 nn.Upsample(scale_factor=2, mode="nearest"),
             )

@@ -20,7 +20,7 @@ train:
         # 'rotate': 180
     epoch: 50
     batch_size: 4
-    val_interval: 30
+    val_interval: 300
     n_workers: 4
     print_interval: 10
     optimizer:

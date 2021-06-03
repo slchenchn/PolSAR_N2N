@@ -1,5 +1,5 @@
 model:
-    arch: unetpp
+    arch: unetpp3
     in_channels: 9
     zero_output_weights: False
 data:
@@ -9,7 +9,7 @@ data:
     path: data/BSR/BSDS500/data/images
     # mirror: True 
     norm: False
-    log: True
+    log: False
     ENL: 10
     simulate: True
 train:
@@ -26,7 +26,7 @@ train:
     optimizer:
         name: 'adam'    
         # name: 'sgd'
-        lr: 1.0e-6
+        lr: 1.0e-5
         # lr: 5.0e-4
         weight_decay: 1.0e-5
         # momentum: 0.9
@@ -38,15 +38,17 @@ train:
             const: True
         # reduction: 'mean'
     lr: 
-        name: 'constant_lr'
+        name: 'step'
+        gamma: 0.5
+        step_size : 1250
         # name: 'poly_lr_chen'
         # max_iter: 2000
     resume: 
 test:
     out_path: 'result'
-    pth: 'runs/unetpp_N2N_loss_adam_50_13/50.pkl'
+    pth: 'runs/unetpp_N2N_loss_adam_50_15/40.pkl'
     gpu: [0]
     augments:
     batch_size: 16
-    n_workers: 12
+    n_workers: 1
     dataset: 'test'

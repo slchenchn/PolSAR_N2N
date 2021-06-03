@@ -20,7 +20,7 @@ train:
         # 'rotate': 180
     epoch: 50
     batch_size: 4
-    val_interval: 30
+    val_interval: 300
     n_workers: 4
     print_interval: 10
     optimizer:
@@ -46,7 +46,7 @@ train:
     resume: 
 test:
     out_path: 'result'
-    pth: 'runs/unetpp_N2N_loss_adam_50_15/50.pkl'
+    pth: 'runs/unetpp_N2N_loss_adam_50_15/40.pkl'
     gpu: [0]
     augments:
     batch_size: 16
