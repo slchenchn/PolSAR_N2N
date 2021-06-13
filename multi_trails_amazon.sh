@@ -23,7 +23,9 @@ cd /home/csl/code/PolSAR_N2N
 
 # python train.py --config_file configs/hoekman_unetpp_simulate_step_sgd.yml --train.lr.gamma=0.5 --train.optimizer.lr 1e-8 --train.lr.step_size=500
 
-python train.py --config_file configs/hoekman_unetpp_simulate_step_sgd.yml --train.lr.gamma=0.5 --train.optimizer.lr 1e-6 --train.lr.step_size=500
+python train.py --train.lr.gamma=0.5 --train.optimizer.lr 1e-5 --train.lr.step_size=500 --model.arch unetpp
+
+# python train.py --train.lr.gamma=0.5 --train.optimizer.lr 1e-3 --train.lr.step_size=500 --model.arch unetpp
 
 # python train.py --config_file configs/hoekman_unetpp_simulate_step_sgd.yml --train.lr.gamma=0.1 --train.optimizer.lr 1e-4
 

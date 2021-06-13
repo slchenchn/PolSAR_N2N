@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-06-02
+Last Modified: 2021-06-03
 	content: 
 '''
 ''' 
@@ -272,7 +272,9 @@ def train(cfg, writer, logger):
                 val_start_time = time.time()
                 model.eval()            
                 with torch.no_grad():   
-                    for clean, noisy, _ in valloader:      
+                    for clean, noisy, _ in valloader:    
+                        noisy /= 350  
+                        clean /= 350  
                         noisy = noisy.to(device, dtype=torch.float32)
                         noisy_denoised = model(noisy)
                         
@@ -327,7 +329,7 @@ def train(cfg, writer, logger):
 
 
 if __name__ == "__main__":
-    cfg = args.get_argparser('configs/hoekman_unetpp_simulate_step_sgd.yml')
+    cfg = args.get_argparser('configs/hoekman_unetpp_simulate_step.yml')
     
     # choose deterministic algorithms, and disable benchmark for variable size input
     utils.set_random_seed(0)
