@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-06-03
+Last Modified: 2021-06-13
 	content: 
 '''
 ''' 
@@ -179,7 +179,7 @@ def train(cfg, writer, logger):
     data_range = 255
     if cfg.data.log:
         data_range = np.log(data_range)
-    data_range /= 350
+    # data_range /= 350
 
     # Setup Metrics
     running_metrics_val = runningScore(2)
@@ -200,7 +200,7 @@ def train(cfg, writer, logger):
             it += 1   
 
             noisy = noisy.to(device, dtype=torch.float32)
-            noisy /= 350
+            # noisy /= 350
             mask1, mask2 = rand_pool.generate_mask_pair(noisy)
             noisy_sub1 = rand_pool.generate_subimages(noisy, mask1)
             noisy_sub2 = rand_pool.generate_subimages(noisy, mask2)
@@ -229,6 +229,10 @@ def train(cfg, writer, logger):
             loss1 = torch.mean(diff**2)
             loss2 = gamma * torch.mean((diff - exp_diff)**2)
             loss_all = loss1 + loss2
+
+            # loss1 = noisy_output - noisy_target
+            # loss2 = torch.exp(noisy_target - noisy_output)
+            # loss_all = torch.mean(loss1 + loss2)
             loss_all.backward()
 
             # In PyTorch 1.1.0 and later, you should call `optimizer.step()` before `lr_scheduler.step()`
@@ -273,8 +277,8 @@ def train(cfg, writer, logger):
                 model.eval()            
                 with torch.no_grad():   
                     for clean, noisy, _ in valloader:    
-                        noisy /= 350  
-                        clean /= 350  
+                        # noisy /= 350  
+                        # clean /= 350  
                         noisy = noisy.to(device, dtype=torch.float32)
                         noisy_denoised = model(noisy)
                         
@@ -329,7 +333,7 @@ def train(cfg, writer, logger):
 
 
 if __name__ == "__main__":
-    cfg = args.get_argparser('configs/hoekman_unetpp_simulate_step.yml')
+    cfg = args.get_argparser('configs/hoekman_unetpp4_simulate_step.yml')
     
     # choose deterministic algorithms, and disable benchmark for variable size input
     utils.set_random_seed(0)

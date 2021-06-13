@@ -1,9 +1,10 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-05-21
-Last Modified: 2021-06-03
+Last Modified: 2021-06-13
 	content: PyTorch implementation of U-Net model for N2N and SSDN.
     adapted from https://github.com/COMP6248-Reproducability-Challenge/selfsupervised-denoising/blob/master-with-report/ssdn/ssdn/models/noise_network.py
+    specify padding mode
     note: this network is partially asymmetric
 '''
 
@@ -48,18 +49,18 @@ class UnetPP4(nn.Module):
 
         # Layers: enc_conv0, enc_conv1, pool1
         self.encode_block_1 = nn.Sequential(
-            self.Conv2d(in_channels, 48, 3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            self.Conv2d(48, 48, 3, padding=1),
-            nn.ReLU(inplace=True),
+            self.Conv2d(in_channels, 48, 3, stride=1, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
+            self.Conv2d(48, 48, 3, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
             _max_pool_block(nn.MaxPool2d(2)),
         )
 
         # Layers: enc_conv(i), pool(i); i=2..5
         def _encode_block_2_3_4_5() -> nn.Module:
             return nn.Sequential(
-                self.Conv2d(48, 48, 3, stride=1, padding=1),
-                nn.ReLU(inplace=True),
+                self.Conv2d(48, 48, 3, stride=1, padding=1, padding_mode='reflect'),
+                nn.LeakyReLU(negative_slope=0.1, inplace=True),
                 _max_pool_block(nn.MaxPool2d(2)),
             )
 
@@ -71,8 +72,8 @@ class UnetPP4(nn.Module):
 
         # Layers: enc_conv6
         self.encode_block_6 = nn.Sequential(
-            self.Conv2d(48, 48, 3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
+            self.Conv2d(48, 48, 3, stride=1, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
         )
 
         ####################################
@@ -83,20 +84,20 @@ class UnetPP4(nn.Module):
 
         # Layers: dec_conv5a, dec_conv5b, upsample4
         self.decode_block_5 = nn.Sequential(
-            self.Conv2d(96, 96, 3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            self.Conv2d(96, 96, 3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
+            self.Conv2d(96, 96, 3, stride=1, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
+            self.Conv2d(96, 96, 3, stride=1, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
             nn.Upsample(scale_factor=2, mode="nearest"),
         )
 
         # Layers: dec_deconv(i)a, dec_deconv(i)b, upsample(i-1); i=4..2
         def _decode_block_4_3_2() -> nn.Module:
             return nn.Sequential(
-                self.Conv2d(144, 96, 3, stride=1, padding=1),
-                nn.ReLU(inplace=True),
-                self.Conv2d(96, 96, 3, stride=1, padding=1),
-                nn.ReLU(inplace=True),
+                self.Conv2d(144, 96, 3, stride=1, padding=1, padding_mode='reflect'),
+                nn.LeakyReLU(negative_slope=0.1, inplace=True),
+                self.Conv2d(96, 96, 3, stride=1, padding=1, padding_mode='reflect'),
+                nn.LeakyReLU(negative_slope=0.1, inplace=True),
                 nn.Upsample(scale_factor=2, mode="nearest"),
             )
 
@@ -107,10 +108,10 @@ class UnetPP4(nn.Module):
 
         # Layers: dec_conv1a, dec_conv1b, dec_conv1c,
         self.decode_block_1 = nn.Sequential(
-            self.Conv2d(96 + in_channels, 96, 3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            self.Conv2d(96, 96, 3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
+            self.Conv2d(96 + in_channels, 96, 3, stride=1, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
+            self.Conv2d(96, 96, 3, stride=1, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
         )
 
         ####################################
@@ -123,9 +124,9 @@ class UnetPP4(nn.Module):
         self.output_conv = self.Conv2d(96, in_channels, 1)
         self.output_block = nn.Sequential(
             self.Conv2d(nin_a_io, nin_a_io, 1),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
             self.Conv2d(nin_a_io, 96, 1),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(negative_slope=0.1, inplace=True),
             self.output_conv,
         )
 
