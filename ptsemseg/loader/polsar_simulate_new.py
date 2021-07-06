@@ -1,9 +1,10 @@
 '''
 Author: Shuailin Chen
-Created Date: 2021-03-05
-Last Modified: 2021-07-04
-	content: 
+Created Date: 2021-06-30
+Last Modified: 2021-06-30
+	content: more general framework for simulate dataloader
 '''
+
 import shutil
 import os
 import os.path as osp
@@ -31,13 +32,13 @@ from mylib import file_utils as fu
 from mylib import types
 from mylib import mathlib
 from mylib import my_torch_tools as mt
-
-from .polsar_base import PolSARSBase
 # import ptsemseg.augmentations.augmentations
+
+from .augment_noise import MyNoiseAdder
 
 _TMP_PATH = './tmp'
 
-class PolSARSimulate(PolSARSBase):
+class PolSARSimulate(data.Dataset):
     ''' PolSAR Neighbor2Neighbor dataloaders for simulated data
     
     Args:
@@ -72,6 +73,7 @@ class PolSARSimulate(PolSARSBase):
         self.norm = norm
         self.log = log
         self.ENL = ENL
+        self.noise_adder = MyNoiseAdder(noise_config)
 
         # compensate for the mean value of log tranformed intensites
         if log:
@@ -103,8 +105,7 @@ class PolSARSimulate(PolSARSBase):
             img = self.augments(torch.from_numpy(img))
 
         if isinstance(img, torch.Tensor):
-            img = img.numpy()
-        img, noise = simulate.generate_Wishart_noise_from_img(img, self.ENL)        
+            img = img.numpy()     
         
 
         # pauli_img = psr.rgb_by_c3(img, type='sinclair')
@@ -114,19 +115,46 @@ class PolSARSimulate(PolSARSBase):
 
 
         # hoekman decomposition
-        img = psr.Hokeman_decomposition(img)
-        noise = psr.Hokeman_decomposition(noise)
+        # img = psr.Hokeman_decomposition(img)
+        # noise = psr.Hokeman_decomposition(noise)
 
         # log transform
-        if self.log:
-            img = np.log(img) + self.log_compensation
-            noise = np.log(noise) + self.log_compensation
+        # if self.log:
+        #     img = np.log(img) + self.log_compensation
+        #     noise = np.log(noise) + self.log_compensation
         
         # to pytorch
         img = torch.from_numpy(img)
         noise = torch.from_numpy(noise)
 
         return img, noise, self.files_path[index]
+
+    def Hoekman_recover_to_C3(self, h):
+        ''' Recover hoekman data to C3 data
+
+        Args:
+            h (Tensor): in shape of [batch, channel, height, width]
+        
+        Returns
+            C3 (ndarray): C3 matrix, in shape of [batch, channel, height, width]
+        '''
+
+        # to numpy
+        if 'cpu' != h.device:
+            h = h.cpu()
+        if isinstance(h, Tensor):
+            h = h.numpy()
+
+        # inverse log transform
+        if self.log:
+            h = np.exp(h - self.log_compensation)
+
+        # invere hoekman decomposition
+        C3 = np.empty(h.shape)
+        for ii in range(h.shape[0]):
+            C3[ii, ...] = psr.inverse_Hokeman_decomposition(h[ii, ...])
+
+        return C3
 
 
 if __name__=='__main__':

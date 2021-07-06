@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-06-13
+Last Modified: 2021-07-05
 	content: 
 '''
 ''' 
@@ -44,7 +44,7 @@ from ptsemseg.augmentations import get_composed_augmentations
 from ptsemseg.schedulers import get_scheduler
 from ptsemseg.optimizers import get_optimizer
 from ptsemseg.loader import rand_pool
-
+from ptsemseg.loader.augment_noise import MyNoiseAdder
 
 from mylib import nestargs
 from mylib import types
@@ -80,6 +80,8 @@ def train(cfg, writer, logger):
         logger=logger,
         log = cfg.data.log,
         ENL = cfg.data.ENL,
+        noise_config = cfg.data.noise_config,
+        pol = cfg.data.pol,
         )
 
     v_loader = data_loader(
@@ -90,6 +92,8 @@ def train(cfg, writer, logger):
         split_root = cfg.data.split,
         logger=logger,
         ENL = cfg.data.ENL,
+        noise_config = cfg.data.noise_config,
+        pol = cfg.data.pol,
         )
 
     train_data_len = len(t_loader)
@@ -109,7 +113,7 @@ def train(cfg, writer, logger):
 
     valloader = data.DataLoader(v_loader, 
                                 batch_size=cfg.test.batch_size, 
-                                # persis
+                                  persistent_workers=True,
                                 num_workers=cfg.train.n_workers,
                                 )
 
@@ -119,7 +123,7 @@ def train(cfg, writer, logger):
     input_size = (cfg.model.in_channels, 512, 512)
     logger.info(f"Using Model: {cfg.model.arch}")
     # logger.info(f'model summary: {summary(model, input_size=(input_size, input_size), is_complex=False)}')
-    model = torch.nn.DataParallel(model, device_ids=cfg.gpu)      #自动多卡运行，这个好用
+    model = torch.nn.DataParallel(model, device_ids=cfg.train.gpu)      #自动多卡运行，这个好用
     
     # Setup optimizer, lr_scheduler and loss function
     optimizer_cls = get_optimizer(cfg)
@@ -195,11 +199,22 @@ def train(cfg, writer, logger):
     train_start_time = time.time() 
     train_val_start_time = time.time()
     model.train()   
+    noise_adder = MyNoiseAdder(cfg.data.noise_config)
     while it < train_iter:
         for clean, noisy, _ in trainloader:
             it += 1   
+            optimizer.zero_grad()
+
+            # clean = clean.cuda()
+            # clean /= 255.0
+            # clean, noisy = noise_adder.add_train_noise(clean)  
+            # clean = clean[:, :, ::2, ::2]
+
+
+            noisy = noisy[..., ::2, ::2]
 
             noisy = noisy.to(device, dtype=torch.float32)
+            
             # noisy /= 350
             mask1, mask2 = rand_pool.generate_mask_pair(noisy)
             noisy_sub1 = rand_pool.generate_subimages(noisy, mask1)
@@ -233,6 +248,8 @@ def train(cfg, writer, logger):
             # loss1 = noisy_output - noisy_target
             # loss2 = torch.exp(noisy_target - noisy_output)
             # loss_all = torch.mean(loss1 + loss2)
+            if not cfg.data.log:
+                loss_all /= cfg.train.loss.denominator
             loss_all.backward()
 
             # In PyTorch 1.1.0 and later, you should call `optimizer.step()` before `lr_scheduler.step()`
@@ -290,6 +307,8 @@ def train(cfg, writer, logger):
                             val_ssim_meter.update(ssim)
                         
                         val_loss = torch.mean((noisy_denoised-noisy)**2)
+                        if not cfg.data.log:
+                            val_loss /= cfg.train.loss.denominator
                         val_loss_meter.update(val_loss)
 
                 writer.add_scalar('loss/val_loss', val_loss_meter.avg, it)
@@ -302,7 +321,6 @@ def train(cfg, writer, logger):
                     logger.info(f'psnr: {val_psnr_meter.avg},\tssim: {val_ssim_meter.avg}')
                     val_psnr_meter.reset()
                     val_ssim_meter.reset()
-
 
 
                 train_val_time = time.time() - train_val_start_time
@@ -333,13 +351,14 @@ def train(cfg, writer, logger):
 
 
 if __name__ == "__main__":
-    cfg = args.get_argparser('configs/hoekman_unetpp4_simulate_step.yml')
+    cfg = args.get_argparser('configs/hoekman_unetpp_simulate_step.yml')
     
     # choose deterministic algorithms, and disable benchmark for variable size input
     utils.set_random_seed(0)
     
     # generate work dir
-    run_id = osp.join(r'runs', cfg.model.arch + '_' + cfg.train.loss.name + '_' + cfg.train.optimizer.name+ '_' + str(cfg.train.epoch))
+    run_id = osp.join(r'runs', cfg.model.arch + '_' + cfg.train.loss.name + '_' + cfg.train.optimizer.name+ '_' + str(cfg.train.epoch)) + '_'
+    run_id += 'simulate' if cfg.data.simulate else 'real'
     run_id = utils.get_work_dir(run_id)
     writer = SummaryWriter(log_dir=run_id)
     # config_fig = types.dict2fig(cfg.to_flatten_dict())
@@ -352,7 +371,14 @@ if __name__ == "__main__":
     # print('-'*100)
     logger.info(f'RUNDIR: {run_id}')
     logger.info(f'using config file: {cfg.config_file}')
-    shutil.copy(cfg.config_file, run_id)
+
+
+    with open(osp.join(run_id, osp.basename(cfg.config_file)), 'w') as outfile:
+        cfg_dict = cfg.to_nested_dict()
+        cfg_dict.pop('config_file')
+        yaml.dump(cfg_dict, outfile, default_flow_style=False)
+        
+    # shutil.copy(cfg.config_file, run_id)
 
     train(cfg, writer, logger)
     logger.info(f'RUNDIR:{run_id}')

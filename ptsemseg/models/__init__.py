@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-06-03
+Last Modified: 2021-07-05
 	content: 
 '''
 import copy
@@ -11,6 +11,7 @@ from ptsemseg.models.unetpp import UnetPP
 from ptsemseg.models.unetpp2 import UnetPP2
 from ptsemseg.models.unetpp3 import UnetPP3
 from ptsemseg.models.unetpp4 import UnetPP4
+from ptsemseg.models.unetpp5 import UnetPP5
 
 
 def get_model(model_dict):
@@ -32,6 +33,7 @@ def _get_model_instance(name):
             "unetpp2": UnetPP2,
             "unetpp3": UnetPP3,
             "unetpp4": UnetPP4,
+            "unetpp5": UnetPP5,
         }[name]
     except:
         raise("Model {} not available".format(name))

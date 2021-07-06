@@ -1,25 +1,26 @@
+# As the original paper
 model:
     arch: unetpp
-    in_channels: 9
+    in_channels: 3
     zero_output_weights: False
 data:
     dataloader: PolSAR_simulate
     split: data/SAR_CD/GF3/split/denoise/Hoekman/0.9
     format: Hoekman
     path: data/BSR/BSDS500/data/images
+    noise_config: gauss25
     # mirror: True 
     norm: False
-    log: True
+    log: False
     ENL: 10
     simulate: True
-    noise_config: gauss25
 train:
     gpu: [0]
     augment: 
         'hflip': 0.5
         'vflip': 0.5
         # 'rotate': 180
-    epoch: 50
+    epoch: 100
     batch_size: 4
     val_interval: 300
     n_workers: 4
@@ -27,7 +28,7 @@ train:
     optimizer:
         name: 'adam'    
         # name: 'sgd'
-        lr: 1.0e-3
+        lr: 3.0e-4
         # lr: 5.0e-4
         # weight_decay: 1.0e-5
         # momentum: 0.9
@@ -47,9 +48,9 @@ train:
     resume: 
 test:
     out_path: 'result'
-    pth: 'runs/unetpp_N2N_loss_adam_50_27/50.pkl'
+    pth: 'runs/unetpp_N2N_loss_adam_50_15/40.pkl'
     gpu: [0]
     augments:
-    batch_size: 2
+    batch_size: 16
     n_workers: 1
     dataset: 'test'

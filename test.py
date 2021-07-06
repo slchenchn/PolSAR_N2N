@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-06-13
+Last Modified: 2021-07-05
 '''
 import os.path as osp
 import matplotlib.pyplot as plt
@@ -50,6 +50,7 @@ def test(cfg, logger, run_id):
         augments=data_aug,
         logger=logger,
         ENL = cfg.data.ENL,
+        pol = cfg.data.pol,
         )
     run_id = osp.join(run_id, cfg.test.dataset)
     os.mkdir(run_id)
@@ -66,12 +67,12 @@ def test(cfg, logger, run_id):
                             )
 
     # Setup Model
-    device = f'cuda:{cfg.gpu[0]}'
+    device = f'cuda:{cfg.train.gpu[0]}'
     model = get_model(cfg.model).to(device)
     input_size = (cfg.model.in_channels, 512, 512)
     logger.info(f'using model: {cfg.model.arch}')
     
-    model = torch.nn.DataParallel(model, device_ids=cfg.gpu)
+    model = torch.nn.DataParallel(model, device_ids=cfg.train.gpu)
 
     # load model params
     if osp.isfile(cfg.test.pth):
@@ -99,6 +100,9 @@ def test(cfg, logger, run_id):
     with torch.no_grad():
         for clean, noisy, files_path in loader:
              
+            noisy = noisy[..., ::2, ::2] 
+            clean = clean[..., ::2, ::2]
+
             noisy = noisy.to(device, dtype=torch.float32)
             noisy_denoised = model(noisy)
 
@@ -113,24 +117,43 @@ def test(cfg, logger, run_id):
                 test_psnr_meter.update(np.array(psnr).mean(), n=clean.shape[0])
                 test_ssim_meter.update(np.array(ssim).mean(), n=clean.shape[0])
 
-            noisy = data_loader.Hoekman_recover_to_C3(noisy)
-            clean = data_loader.Hoekman_recover_to_C3(clean)
-            noisy_denoised = data_loader.Hoekman_recover_to_C3(noisy_denoised)
+            if cfg.data.pol=='full':
+                noisy = data_loader.Hoekman_recover_to_C3(noisy)
+                clean = data_loader.Hoekman_recover_to_C3(clean)
+                noisy_denoised = data_loader.Hoekman_recover_to_C3(noisy_denoised)
                 
             # save images
             for ii in range(clean.shape[0]):
 
                 file_path = files_path[ii][29:]
                 file_path = file_path.replace(r'/', '_')
-                file_ori = noisy[ii, ...]
-                file_clean = clean[ii, ...]
-                file_denoise = noisy_denoised[ii, ...]
-                print('clean')
-                pauli_clean = (psr.rgb_by_c3(file_clean, 'sinclair', is_print=True)*255).astype(np.uint8)
-                print('noisy')
-                pauli_ori = (psr.rgb_by_c3(file_ori, 'sinclair', is_print=True)*255).astype(np.uint8)
-                print('denoise')
-                pauli_denoise = (psr.rgb_by_c3(file_denoise, 'sinclair', is_print=True)*255).astype(np.uint8)
+                file_ori = noisy[ii, ...].squeeze()
+                file_clean = clean[ii, ...].squeeze()
+                file_denoise = noisy_denoised[ii, ...].squeeze()
+                # file_ori = noisy[ii, ...].cpu().numpy().squeeze()
+                # file_clean = clean[ii, ...].cpu().numpy().squeeze()
+                # file_denoise = noisy_denoised[ii, ...].cpu().numpy().squeeze()
+                file_denoise = np.clip(file_denoise, a_min=0, a_max=None)
+
+                if cfg.data.pol=='full':
+                    print('clean')
+                    pauli_clean = (psr.rgb_by_c3(file_clean, 'sinclair', is_print=True)*255).astype(np.uint8)
+                    print('noisy')
+                    pauli_ori = (psr.rgb_by_c3(file_ori, 'sinclair', is_print=True)*255).astype(np.uint8)
+                    print('denoise')
+                    pauli_denoise = (psr.rgb_by_c3(file_denoise, 'sinclair', is_print=True)*255).astype(np.uint8)
+                elif cfg.data.pol == 'single':
+                    if cfg.data.log:
+                        file_clean = np.exp(file_clean)
+                        file_denoise = np.exp(file_denoise)
+                        file_ori = np.exp(file_ori)
+
+                    print('clean')
+                    pauli_clean = (psr.gray_by_intensity(file_clean, type='log', is_print=True)*255).astype(np.uint8)
+                    print('noisy')
+                    pauli_ori = (psr.gray_by_intensity(file_ori, type='log', is_print=True)*255).astype(np.uint8)
+                    print('denoise')
+                    pauli_denoise = (psr.gray_by_intensity(file_denoise, type='log', is_print=True)*255).astype(np.uint8)
 
                 path_ori = osp.join(run_id, file_path)
                 path_denoise = osp.join(run_id, file_path)
@@ -157,7 +180,7 @@ def test(cfg, logger, run_id):
 
 
 if __name__=='__main__':
-    cfg = args.get_argparser('configs/hoekman_unetpp4_simulate_step.yml')
+    cfg = args.get_argparser('configs/hoekman_unetpp_simulate_step.yml')
 
     # choose deterministic algorithms, and disable benchmark for variable size input
     utils.set_random_seed(0)

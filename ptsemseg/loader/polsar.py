@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-03-05
-Last Modified: 2021-05-26
+Last Modified: 2021-07-05
 	content: 
 '''
 import shutil
@@ -29,10 +29,12 @@ from mylib import file_utils as fu
 from mylib import types
 from mylib import mathlib
 from mylib import my_torch_tools as mt
+
+from .polsar_base import PolSARSBase
 # import ptsemseg.augmentations.augmentations
 
-class PolSAR(data.Dataset):
-    ''' PolSAR Neighbor2Neighbor dataloaders 
+class PolSAR(PolSARSBase):
+    ''' PolSAR Neighbor2Neighbor dataloaders for real data
     
     Args:
         file_root (str): file root path
@@ -56,6 +58,8 @@ class PolSAR(data.Dataset):
                 log = True,
                 ENL = 1,
                 logger = None,
+                noise_config = None,
+                pol = 'full',
                 ):
         super().__init__()
         self.file_root = file_root
@@ -64,6 +68,7 @@ class PolSAR(data.Dataset):
         self.norm = norm
         self.log = log
         self.ENL = ENL
+        self.pol = pol
 
         # compensate for the mean value of log tranformed intensites
         if log:
@@ -75,7 +80,7 @@ class PolSAR(data.Dataset):
         elif 'RS2' in file_root:
             self.sensor = 'RS2'
         else:
-            raise IOError('don\' know the sensor type')
+            raise IOError('don\'t know the sensor type')
 
         # read all files' path
         self.files_path = fu.read_file_as_list(osp.join(split_root, split+'.txt'))
@@ -153,16 +158,32 @@ class PolSAR(data.Dataset):
             #     files.append(torch.from_numpy(psr_data).type(torch.complex64))
 
         elif self.data_format=='Hoekman':
-            if self.norm:
-                file_path = osp.join(folder_path, 'normed.npy')
-            else:
-                file_path = osp.join(folder_path, 'unnormed.npy')
-            file = np.load(file_path)
+            # if self.norm:
+            #     file_path = osp.join(folder_path, 'normed.npy')
+            # else:
+            #     file_path = osp.join(folder_path, 'unnormed.npy')
+
+            # file = np.load(file_path)
+
+            folder_path = folder_path.replace('Hoekman', 'C3')
+            c3 = psr.read_c3(folder_path)
+            file = psr.Hokeman_decomposition(c3)
             if self.log:
+                file = np.clip(file, a_min=mathlib.eps, a_max=None)
                 file = np.log(file) + self.log_compensation
 
         else:
             raise NotImplementedError
+
+        if self.pol == 'single':
+            folder_path = folder_path.replace('Hoekman', 'C3')
+            file = psr.read_c3(folder_path, out='save_space')
+            file = file[0, ...]
+            file = file[None, ...]
+            
+            if self.log:
+                file = np.clip(file, a_min=mathlib.eps, a_max=None)
+                file = np.log(file) + self.log_compensation
 
         return file
 
@@ -175,8 +196,13 @@ class PolSAR(data.Dataset):
             img = self.augments(img)
         
         # cv2.imwrite(osp.join(save_dir, 'a_fila_a.png'), (file_a.permute(1,2,0).numpy()*255).astype(np.uint8))
+        # plt.hist(img.numpy().flatten(), bins=100)
+        # plt.savefig('tmp/hist.jpg')
 
-        return img
+        # clip value 
+        img = np.clip(img, a_max=500000, a_min=None)
+
+        return img, img, self.files_path[index]
 
 
 if __name__=='__main__':

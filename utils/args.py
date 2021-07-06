@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2021-04-24
-Last Modified: 2021-06-01
+Last Modified: 2021-07-03
 	content: 
 '''
 from mylib import nestargs
@@ -32,7 +32,7 @@ def get_argparser(config_file=None)->nestargs.NestedArgumentParser:
         help="Configuration file to use"
     )    
     parser.add_argument(
-        "--gpu",
+        "--train.gpu",
         nargs='?',
         type=str,
         default='0',
@@ -137,8 +137,8 @@ def get_argparser(config_file=None)->nestargs.NestedArgumentParser:
     # print(args.to_flatten_dict())
     
     # str to list, cause the argparser doesn't support well for list-like command-line params
-    if args.gpu:
-        args.gpu = [int(idx) for idx in args.gpu.split(',')] 
+    if args.train.gpu:
+        args.train.gpu = [int(idx) for idx in args.train.gpu.split(',')] 
     if args.train.loss.weight:
         args.train.loss.weight = [float(w) for w in args.train.loss.weight.split(',')] 
 

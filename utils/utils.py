@@ -1,7 +1,7 @@
 '''
 Author: Shuailin Chen
 Created Date: 2020-11-27
-Last Modified: 2021-05-27
+Last Modified: 2021-07-04
 	content: 
 '''
 import math
@@ -117,6 +117,7 @@ def split_train_val_test(src_path, dst_path, data_format, train_ratio=0.8):
 
         
 if __name__=='__main__':
-    src_path = r'data/GF3/data'
-    dst_path = r'data/GF3/denoise/split'
+    src_path = r'data/SAR_CD/RS2/data'
+    dst_path = r'data/SAR_CD/RS2/split/denoise'
+    split_train_val_test(src_path, dst_path, 'Hoekman', train_ratio=0.8)
     split_train_val_test(src_path, dst_path, 'Hoekman', train_ratio=0.9)
